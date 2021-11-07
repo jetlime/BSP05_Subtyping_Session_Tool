@@ -20,6 +20,8 @@ stype returns [type]
       | o=OUT i=ID s=SEMIC st=stype {$type = $o.text + $i.text + $s.text + ($st.type if not $st.type == None else "") }
       | e=END prl=PRL spt=sprimetype {$type = $e.text + $prl.text + $spt.text + ($spt.type if not $spt.type == None else "") }
       | i=ID prl=PRL spt=sprimetype {$type = $i.text + $prl.text + $spt.text + ($spt.type if not $spt.type == None else "") }
+      | e=END prl=DUALPRL spt=sprimetype {$type = $e.text + $prl.text + $spt.text + ($spt.type if not $spt.type == None else "") }
+      | i=ID prl=DUALPRL spt=sprimetype {$type = $i.text + $prl.text + $spt.text + ($spt.type if not $spt.type == None else "") }
       | sl=SLPAR o=OUT i=ID s=SEMIC st=stype {$type = $sl.text + $o.text + $i.text + $s.text + ($st.type if not $st.type == None else "") }(c=COMMA o2=OUT i2=ID s2=SEMIC st2=stype {$type += $c.text + $o2.text + $i2.text + $s2.text + ($st2.type if not $st2.type == None else "")})* sr=SRPAR {$type += $sr.text}
       | n=IN i=ID s=SEMIC st=stype {$type = $n.text + $i.text + $s.text + ($st.type if not $st.type == None else "") }
       | sl=SLPAR n=IN i=ID s=SEMIC st=stype {$type = $sl.text + $n.text + $i.text + $s.text + ($st.type if not $st.type == None else "") } (c=COMMA n2=IN i2=ID s2=SEMIC st2=stype {$type += $c.text + $n2.text + $i2.text + $s2.text + ($st2.type if not $st2.type == None else "")})* sr=SRPAR {$type += $sr.text}
@@ -85,6 +87,7 @@ OUT     : '!';
 IN      : '?';
 ID      : ('a'..'z' | 'A'..'Z')('a'..'z' | 'A'..'Z' | '0'..'9')* ;
 PRL     : '|';
+DUALPRL : '$';
 //IDU  	: ('A'..'Z')('a'..'z' | 'A'..'Z' | '0'..'9')* ;
 //IDL  	: ('a'..'z')('a'..'z' | 'A'..'Z' | '0'..'9')* ;
 

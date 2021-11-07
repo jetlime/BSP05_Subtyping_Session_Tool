@@ -118,8 +118,8 @@ class Controller:
             elif c == '?': dual += '!'
             elif c == '+': dual += '&'
             elif c == '&': dual += '+'
-            elif c == '⅋': dual += '|'
-            elif c == '|' : dual += '⅋'
+            elif c == '$': dual += '|'
+            elif c == '|' : dual += '$'
             else: dual += c
         return dual
 
@@ -175,7 +175,7 @@ class Controller:
         parser._listeners = [parser_error_listener]
         tree = parser.start()
         # Zero lexical and parser errors, the problem must lie in the tree.type
-        if( '|' in tree.type):
+        if( '|' in tree.type or '$' in tree.type):
             tree.type = t
         return lexer_error_listener, parser_error_listener, tree.type
 
