@@ -54,11 +54,6 @@ dual :: Direction -> Direction
 dual Send = Receive
 dual Receive = Send
 
-
-dual2 :: Seperator -> Seperator
-dual2 Bar = BackAmpersand
-dual2 BackAmpersand = Bar
-
 getPairs :: [LocalType] -> [(String, LocalType)]
 getPairs ((Act Send s lt):xs) = (string2send s, lt):(getPairs xs)
 getPairs ((Act Receive s lt):xs) = (string2receive s, lt):(getPairs xs)
