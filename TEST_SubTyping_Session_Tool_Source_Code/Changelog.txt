@@ -1,0 +1,6 @@
+In Controller.py :
+    -in def __execute_command :
+        line 104 : if platform.system() == "Windows": command = algconfig['win']
+        added part : + command
+    -add folder parallel-subtyping in main
+    -Regenerate Parser and lexer from new grammar

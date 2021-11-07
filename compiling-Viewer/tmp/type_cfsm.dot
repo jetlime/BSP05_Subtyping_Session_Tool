@@ -1,0 +1,9 @@
+digraph ICTS { 
+ q1 [shape = "rectangle" label="1" penwidth = 3]; 
+ q2 [shape = "rectangle" label="2"]; 
+ q2 [shape = "rectangle" label="2"]; 
+ q3 [shape = "rectangle" label="3"]; 
+ q1 -> q2 [label="?a"]; 
+ q2 -> q3 [label="?a"]; 
+ }
+ 
