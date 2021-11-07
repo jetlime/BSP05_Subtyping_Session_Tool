@@ -1,1 +1,1 @@
-rec X. ?a;X $ end
+rec X. !b ; X $ ?a ; end

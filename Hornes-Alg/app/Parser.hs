@@ -135,7 +135,7 @@ wellFormed = wellFormed_ []
         wellFormed_ vars (Choice Receive list) = (F.and $ L.map isReceive list)
                                             && (disjointPrefix list)
                                             && (F.and $ L.map (wellFormed_ vars) list)
-        wellFormed_ vars (Prl s sep ss) = True
+        wellFormed_ vars (Prl s sep ss) = (wellFormed s) && (wellFormed ss)
 
 
 typeDepth :: LocalType -> Int

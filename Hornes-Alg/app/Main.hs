@@ -58,7 +58,6 @@ main = do
                     else 
                         do    
                             print supans
-                            
                             -- supertype and supbtype are check to be wellformed and parser to be defined as objects of class Localtype
 
     return ()
