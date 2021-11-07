@@ -8,13 +8,6 @@ import Sequents
 
 main :: IO ()
 
--- check if a char is in a string
-charFound :: Char -> String -> Bool
-charFound c "" = False
-charFound c (x:xs)
-    | c == x = True
-    | otherwise = charFound c xs
-
 getTypeString :: String -> IO String
 getTypeString s = readFile s
 data Subtyping = Subtyping
@@ -42,7 +35,6 @@ main = do
     -- arg2 is the path to the supertype
     supertype <- getTypeString (sup pargs)
     -- calling function in the Parser module to check if the subtype is well formed.
-    (if (charFound '$' subtype == True) then (print "ok") else (print "ko"))
     case parseLocalType subtype of
         -- error found
         Left err -> do
