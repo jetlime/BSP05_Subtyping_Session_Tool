@@ -1,11 +1,17 @@
 module Sequents where
 
 import Parser
-import Data.Map as M
-import Data.List as L
 import Data.Typeable
 
-data Bag sequent
+data Bag a = EmptyBag | ListBag [(a, Integer)] deriving (Eq, Show)
+
+emptyBag :: Bag a
+emptyBag = EmptyBag
+
+add :: Eq a => a -> Bag a -> Bag a
+add element EmptyBag = ListBag [(element,1)]
+add element (ListBag bag)
+  | element `elem` map fst bag = ListBag bag -- will actually increment the count, and return the new bag.
 
 printResult :: LocalType -> LocalType -> IO()
 printResult subtype supertype = putStrLn("Subtyping between " ++ show subtype ++ " and  " ++ show supertype ++ " holds.")
