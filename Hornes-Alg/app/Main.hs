@@ -5,6 +5,7 @@ import Lib
 import System.Console.CmdArgs
 import Parser 
 import Sequents
+import Data.Time.Clock.POSIX
 
 main :: IO ()
 
@@ -57,8 +58,9 @@ main = do
                     else if not (wellFormed supans) then putStrLn "Error: (S)upertype not well-formed."
                     else 
                         do    
-                            print supans
-                            
                             -- supertype and supbtype are check to be wellformed and parser to be defined as objects of class Localtype
-
+                            start <- getPOSIXTime
+                            sequentsAlg subans supans
+                            end <- getPOSIXTime
+                            putStrLn $ ("Time taken: " ++ (show $ end - start))
     return ()

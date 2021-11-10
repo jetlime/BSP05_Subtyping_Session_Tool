@@ -26,6 +26,7 @@ dependencies:
 - containers 
 - filepath
 - cmdargs
+- time
 
 library:
   source-dirs: src
