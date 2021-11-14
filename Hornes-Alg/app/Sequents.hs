@@ -2,16 +2,21 @@ module Sequents where
 
 import Parser
 import Data.Typeable
+import qualified Data.Map as M
+import Data.Map (Map)
 
-data Bag a = EmptyBag | ListBag [(a, Integer)] deriving (Eq, Show)
+newtype Bag a = Bag (Map a Int)
+    deriving (Show,Eq)
 
-emptyBag :: Bag a
-emptyBag = EmptyBag
+-- Code to handle types, obtained from user dave4420 on stackoverflow.com
 
-add :: Eq a => a -> Bag a -> Bag a
-add element EmptyBag = ListBag [(element,1)]
-add element (ListBag bag)
-  | element `elem` map fst bag = ListBag bag -- will actually increment the count, and return the new bag.
+empty :: Bag a
+empty = Bag $ M.empty
+-- converta list to a bag
+fromList :: (Ord a) => [a] -> Bag a
+fromList = foldl f empty
+    where
+        f (Bag map) x = Bag $ M.insertWith (+) x 1 map
 
 printResult :: LocalType -> LocalType -> IO()
 printResult subtype supertype = putStrLn("Subtyping between " ++ show subtype ++ " and  " ++ show supertype ++ " holds.")
@@ -46,7 +51,7 @@ printDual (Prl s sep ss) = (printDual s)
                                  ++
                                  (printDual ss)
 
-dualize :: LocalType -> LocalType -> Either String String 
+dualize :: LocalType -> LocalType -> Either String  (Bag LocalType)
 dualize lsubtype lsupertype = do 
     let subtype = printLocalType lsubtype
     let supertype = printLocalType lsupertype
@@ -55,14 +60,34 @@ dualize lsubtype lsupertype = do
     if (charInString '$' supertype == True || charInString '|' supertype == True)
     then do 
         let dualType = printDual lsupertype
-        Right dualType
+        -- convert the type from String to Localtype and parse it
+        case parseLocalType dualType of
+            Left err -> do 
+                let error = show err
+                Left error
+            Right ans -> do
+                -- create a list with the dualised supertype and the subtype
+                -- convert the list to a bag x 
+                let sequent = fromList [lsubtype ,ans]
+                --Right dualType
+                Right sequent
     else 
         do 
             if (charInString '$' subtype == True || charInString '|' subtype == True)
                 then 
                     do 
                         let dualType = printDual lsubtype
-                        Right dualType
+                        -- convert the type from String to Localtype and parse it
+                        case parseLocalType dualType of
+                            Left err -> do 
+                                let error = show err
+                                Left error
+                            Right ans -> do
+                                -- create a list with the dualised subtype and the supertype
+                                -- convert the list to a bag x 
+                                let sequent = fromList [ans ,lsupertype]
+                                --Right dualType
+                                Right sequent
             else
                 do  
                     -- if no internal communications are present in either session type
@@ -80,11 +105,6 @@ sequentsAlg subtype supertype= do
             putStrLn(err)
         Right ans -> do 
             -- we dualized one of the types.
-            let dualType = ans
-            -- convert the type from String to Localtype and parse it
-            case parseLocalType dualType of
-                Left err -> do
-                    putStrLn("Error Occured while generating a Dual.")
-                Right ans -> do 
-                    putStrLn("Type got dualized and parsed.")
+            let sequent = ans
+            -- End Of Algorithm
             printResult subtype supertype
