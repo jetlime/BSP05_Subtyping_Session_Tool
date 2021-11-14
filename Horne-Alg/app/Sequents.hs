@@ -1,22 +1,31 @@
 module Sequents where
 
 import Parser
+import Utils
 import Data.Typeable
 import qualified Data.Map as M
 import Data.Map (Map)
 
-newtype Bag a = Bag (Map a Int)
-    deriving (Show,Eq)
 
--- Code to handle types, obtained from user dave4420 on stackoverflow.com
+-- algorithm steps
+step1 :: (Bag LocalType) -> Bool
+-- check if all elements are of type End
+step1 sequent = do 
+    -- convert the sequent to a list
+    let list = toList sequent
+    -- check if the list is composed of only the same type
+    if allTheSame list then 
+        do 
+            -- check if the list is only composed of type End
+            -- if so the alg. succeeds
+            let felem = head list
+            if felem==End then
+                True
+            else 
+                False
+    else 
+        False
 
-empty :: Bag a
-empty = Bag $ M.empty
--- converta list to a bag
-fromList :: (Ord a) => [a] -> Bag a
-fromList = foldl f empty
-    where
-        f (Bag map) x = Bag $ M.insertWith (+) x 1 map
 
 printResult :: LocalType -> LocalType -> IO()
 printResult subtype supertype = putStrLn("Subtyping between " ++ show subtype ++ " and  " ++ show supertype ++ " holds.")
@@ -105,6 +114,9 @@ sequentsAlg subtype supertype= do
             putStrLn(err)
         Right ans -> do 
             -- we dualized one of the types.
+            -- and put the two types in a Multiset called sequent
             let sequent = ans
+            -- start of alg. 
+            let step1ans = step1 sequent
             -- End Of Algorithm
             printResult subtype supertype

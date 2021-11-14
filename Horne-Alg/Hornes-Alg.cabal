@@ -45,6 +45,7 @@ executable Hornes-Alg-exe
   other-modules:
       Parser
       Sequents
+      Utils
       Paths_Hornes_Alg
   hs-source-dirs:
       app
