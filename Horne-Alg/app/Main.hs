@@ -11,17 +11,23 @@ main :: IO ()
 
 getTypeString :: String -> IO String
 getTypeString s = readFile s
+
 data Subtyping = Subtyping
                  { sub :: String
                  , sup :: String
                  , pics :: Bool
+                 , flag :: String
                  }
                deriving (Data,Typeable,Show,Eq)
 
+getMode :: String -> Bool
+getMode "1" = True  
+getMode "0" = False
 
 subargs = Subtyping 
  { sub = def  &= argPos 0  &= typ "FILE/LOCALTYPE"
  , sup = def &= argPos 1  &= typ "FILE/LOCALTYPE"
+ , flag = def &= argPos 2
  , pics = def
            &= explicit &= name "pics"
            &= help "Print graphs (.dot and .png files)"
@@ -36,6 +42,11 @@ main = do
     -- arg2 is the path to the supertype
     supertype <- getTypeString (sup pargs)
     -- calling function in the Parser module to check if the subtype is well formed.
+    -- get the flag of the algorithm, defining in which way we should check subtyping 
+    -- this will decide if the supertype of the subtype shall be dualized
+    -- 1 is the normal way (supertype get's dualized), 0 the other way (subtype get's dualized)
+    let mode = getMode (flag pargs)
+
     case parseLocalType subtype of
         -- error found
         Left err -> do
@@ -60,7 +71,7 @@ main = do
                         do    
                             -- supertype and supbtype are check to be wellformed and parser to be defined as objects of class Localtype
                             start <- getPOSIXTime
-                            sequentsAlg subans supans
+                            sequentsAlg subans supans mode
                             end <- getPOSIXTime
                             putStrLn $ ("Time taken: " ++ (show $ end - start))
     return ()
