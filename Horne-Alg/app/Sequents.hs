@@ -27,8 +27,9 @@ step1 sequent = do
         False
 
 
-printResult :: LocalType -> LocalType -> IO()
-printResult subtype supertype = putStrLn("Subtyping between " ++ show subtype ++ " and  " ++ show supertype ++ " holds.")
+printResult :: LocalType -> LocalType -> Bool -> IO()
+printResult subtype supertype True = putStrLn("Subtyping between " ++ show subtype ++ " and  " ++ show supertype ++ " holds.")
+printResult subtype supertype False = putStrLn("Subtyping between " ++ show subtype ++ " and  " ++ show supertype ++ " does not hold.")
 
 printDual :: LocalType -> String
 printDual (Act dir s lt) = (if dir == Send then ((printDirection Receive)++s++"; "++(printDual lt)) else (printDirection Send)++s++"; "++(printDual lt))
@@ -112,4 +113,4 @@ sequentsAlg subtype supertype mode = do
             -- start of alg. 
             let step1ans = step1 sequent
             -- End Of Algorithm
-            printResult subtype supertype
+            printResult subtype supertype step1ans
