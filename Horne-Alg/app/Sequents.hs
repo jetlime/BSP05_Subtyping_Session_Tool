@@ -60,13 +60,13 @@ printDual (Prl s sep ss) = (printDual s)
                                  ++
                                  (printDual ss)
 
-dualize :: LocalType -> LocalType -> Either String  (Bag LocalType)
-dualize lsubtype lsupertype = do 
+dualize :: LocalType -> LocalType -> Bool -> Either String  (Bag LocalType)
+dualize lsubtype lsupertype mode = do 
     let subtype = printLocalType lsubtype
     let supertype = printLocalType lsupertype
-    -- if the supertype uses internal communications we dualize it
+    -- if the mode is true then we dualize the supertype 
     -- otherwise we dualize the subtype
-    if (charInString '$' supertype == True || charInString '|' supertype == True)
+    if mode 
     then do 
         let dualType = printDual lsupertype
         -- convert the type from String to Localtype and parse it
@@ -82,39 +82,32 @@ dualize lsubtype lsupertype = do
                 Right sequent
     else 
         do 
-            if (charInString '$' subtype == True || charInString '|' subtype == True)
-                then 
-                    do 
-                        let dualType = printDual lsubtype
-                        -- convert the type from String to Localtype and parse it
-                        case parseLocalType dualType of
-                            Left err -> do 
-                                let error = show err
-                                Left error
-                            Right ans -> do
-                                -- create a list with the dualised subtype and the supertype
-                                -- convert the list to a bag x 
-                                let sequent = fromList [ans ,lsupertype]
-                                --Right dualType
-                                Right sequent
-            else
-                do  
-                    -- if no internal communications are present in either session type
-                    -- we inform the user that the algorithm only works for parallel session types for the moment
-                    let error = "Please input at least one type using internal communications for checking subtyping with the parallel subtyping algorithm"
+            let dualType = printDual lsubtype
+            -- convert the type from String to Localtype and parse it
+            case parseLocalType dualType of
+                Left err -> do 
+                    let error = show err
                     Left error
+                Right ans -> do
+                    -- create a list with the dualised subtype and the supertype
+                    -- convert the list to a bag x 
+                    let sequent = fromList [ans ,lsupertype]
+                    --Right dualType
+                    Right sequent
 
 
-sequentsAlg :: LocalType -> LocalType ->  IO()
-sequentsAlg subtype supertype= do 
-    -- chose which type to dualize
-    case dualize subtype supertype of 
+
+sequentsAlg :: LocalType -> LocalType -> Bool ->  IO()
+sequentsAlg subtype supertype mode = do 
+    -- chose which type to dualize in function of mode
+    case dualize subtype supertype mode of 
         Left err -> do 
             -- An error occurs when no internal communications are present in either type
             putStrLn(err)
         Right ans -> do 
             -- we dualized one of the types.
             -- and put the two types in a Multiset called sequent
+            
             let sequent = ans
             -- start of alg. 
             let step1ans = step1 sequent
