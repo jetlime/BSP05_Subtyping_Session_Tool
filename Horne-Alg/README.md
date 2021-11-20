@@ -1,1 +1,1 @@
-# Hornes-Alg
+# Horne-Alg
