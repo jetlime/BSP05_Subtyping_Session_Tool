@@ -21,8 +21,8 @@ data Subtyping = Subtyping
                deriving (Data,Typeable,Show,Eq)
 
 getMode :: String -> Bool
-getMode "1" = True  
-getMode "0" = False
+getMode "Horne" = True  
+getMode "OtherWay" = False
 
 subargs = Subtyping 
  { sub = def  &= argPos 0  &= typ "FILE/LOCALTYPE"
