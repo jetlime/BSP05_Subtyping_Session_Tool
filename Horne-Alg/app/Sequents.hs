@@ -7,9 +7,9 @@ import qualified Data.Map as M
 import Data.Map (Map)
 
 -- algorithm steps
-step1 :: (Bag LocalType) -> Bool
+okRule :: (Bag LocalType) -> Bool
 -- check if all elements are of type End
-step1 sequent = do 
+okRule sequent = do 
     -- convert the sequent to a list
     let list = toList sequent
     -- check if the list is composed of only the same type
@@ -110,6 +110,6 @@ sequentsAlg subtype supertype mode = do
             
             let sequent = ans
             -- start of alg. 
-            let step1ans = step1 sequent
+            let okRuleans = okRule sequent
             -- End Of Algorithm
-            printResult subtype supertype step1ans
+            printResult subtype supertype okRuleans
