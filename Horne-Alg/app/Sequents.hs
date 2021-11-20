@@ -6,7 +6,6 @@ import Data.Typeable
 import qualified Data.Map as M
 import Data.Map (Map)
 
-
 -- algorithm steps
 step1 :: (Bag LocalType) -> Bool
 -- check if all elements are of type End

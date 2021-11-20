@@ -1,3 +1,3 @@
-# Changelog for Hornes-Alg
+# Changelog for Horne-Alg
 
 ## Unreleased changes
