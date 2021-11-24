@@ -25,6 +25,30 @@ okRule sequent = do
     else 
         False
 
+merge xs ys = concatMap (\(x,y) -> [x,y]) (zip xs ys)
+
+isPrl :: LocalType -> Bool
+isPrl (Prl s Bar ss) = True
+isPrl _ = False
+
+checkTimes :: LocalType -> LocalType
+checkTimes (Prl s Bar ss) = s
+
+--checkTimes (Prl s BackAmpersand ss) = s BackAmpersand ss
+
+checkTimes2 :: LocalType -> LocalType
+checkTimes2 (Prl s Bar ss) = ss
+
+timesRule :: (Bag LocalType) -> (Bag LocalType)
+timesRule sequent = do
+    let xs = toList sequent
+    let firstlist = map (\x -> if (isPrl x) then (checkTimes x) else x) xs
+    let newxs = filter isPrl xs
+    let secondlist = map checkTimes2 newxs
+    let mergedlist = merge secondlist firstlist
+    let sequent = fromList firstlist
+    sequent
+
 
 printResult :: LocalType -> LocalType -> Bool -> IO()
 printResult subtype supertype True = putStrLn("Subtyping between " ++ show subtype ++ " and  " ++ show supertype ++ " holds.")
@@ -107,9 +131,9 @@ sequentsAlg subtype supertype mode = do
         Right ans -> do 
             -- we dualized one of the types.
             -- and put the two types in a Multiset called sequent
-            
             let sequent = ans
             -- start of alg. 
-            let okRuleans = okRule sequent
+            let newsequent = timesRule sequent
+            let okRuleans = okRule newsequent
             -- End Of Algorithm
             printResult subtype supertype okRuleans
