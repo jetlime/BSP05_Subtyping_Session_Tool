@@ -21,3 +21,9 @@ toList (Bag m) = concatMap f $ M.toList m
 -- Check if every element is the same
 allTheSame :: (Eq a) => [a] -> Bool
 allTheSame xs = and $ map (== head xs) (tail xs)
+
+combine2 :: [b] -> [b] -> [b]
+combine2 xs ys = combineN [xs,ys]
+
+combineN :: [[b]] -> [b]
+combineN ls = [a | l <- ls, a <- l]

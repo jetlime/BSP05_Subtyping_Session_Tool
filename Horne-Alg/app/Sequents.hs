@@ -2,11 +2,17 @@ module Sequents where
 
 import Parser
 import Utils
+-- to use mapWithIndex
+import Data.Sequence (Seq(..), (<|), (|>), (><))
+import qualified Data.Sequence as S
 import Data.Typeable
 import qualified Data.Map as M
 import Data.Map (Map)
-
--- algorithm steps
+import Data.List as L
+import Data.List (elemIndex)
+-- Debug
+import Debug.Trace
+-- OK rule
 okRule :: (Bag LocalType) -> Bool
 -- check if all elements are of type End
 okRule sequent = do 
@@ -21,37 +27,103 @@ okRule sequent = do
             if felem==End then
                 True
             else 
-                False
+                if (checkTimesApply list == False) then (timesRule sequent) else False
     else 
-        False
-
-merge xs ys = concatMap (\(x,y) -> [x,y]) (zip xs ys)
+       if (checkTimesApply list == False) then (timesRule sequent) else False
 
 isPrl :: LocalType -> Bool
 isPrl (Prl s Bar ss) = True
+isPrl (Act dir s ss) = isPrl ss
 isPrl _ = False
 
+isAct :: LocalType -> Bool
+isAct (Act dir _ lt) = True
+isAct _ = False
+
+-- check if the localtype has a Bar (|) inside 
 checkTimes :: LocalType -> LocalType
 checkTimes (Prl s Bar ss) = s
-
---checkTimes (Prl s BackAmpersand ss) = s BackAmpersand ss
+checkTimes (Act dir s ss) = (Act dir s (checkTimes ss))
 
 checkTimes2 :: LocalType -> LocalType
 checkTimes2 (Prl s Bar ss) = ss
+checkTimes2 (Act dir s ss) = checkTimes2 ss
+-- check if TIME's rule can be applied
+checkTimesApply :: [LocalType] -> Bool
+checkTimesApply xs = do 
+    let newxs = filter isPrl xs
+    null newxs
 
-timesRule :: (Bag LocalType) -> (Bag LocalType)
-timesRule sequent = do
+
+
+timesRule :: (Bag LocalType) -> Bool
+timesRule sequent= do
     let xs = toList sequent
     let firstlist = map (\x -> if (isPrl x) then (checkTimes x) else x) xs
     let newxs = filter isPrl xs
     let secondlist = map checkTimes2 newxs
-    let mergedlist = merge secondlist firstlist
-    let sequent = fromList firstlist
-    sequent
+    let mergedlist = combine2 secondlist firstlist
+    let sequent = fromList mergedlist
+    -- CALL PREFIX RULE WITH SEQUENT
+    okRule sequent 
 
+-- ?a;end
+-- [?a; end,end,end]
+-- let num = position ((length list)) (Act Send "a" End) list 0
+pos :: LocalType -> LocalType -> Int -> Int -> Maybe Int
+pos (Act dir s ss) (Act dir2 t tt) index len
+    | (dir /= dir2) && (s == t) = Just len
+    | otherwise = pos (Act dir s ss) tt index len
+pos lt ltt index len = Nothing
+
+
+position :: Int -> LocalType -> [LocalType] -> Int -> Maybe Int
+position size _ [] _ = Nothing
+position size _ [x] _  = Nothing
+position size lt (x:xs) index = do 
+    let current_index = size - (length xs+1)
+    -- on veut eviter index 
+    if current_index /= index 
+    then do 
+        case pos lt x index current_index of 
+            Nothing -> position (size-1) lt xs index 
+            Just n -> Just n
+    else position (size-1) lt xs index 
+
+findNext :: [LocalType] -> Int -> Direction -> String -> Either Bool Bool
+findNext xs index dir s = do 
+    -- Position of the dual action 
+    case position (length xs) (Act dir s End) xs index of
+        Nothing -> Left False
+        Just n -> Right True
+
+
+checkPrefix :: [LocalType] -> Int -> LocalType -> LocalType
+checkPrefix xs index (Act dir s lt) = do 
+    case findNext xs index dir s of
+        -- if another dual action exists
+        Right ans -> do 
+            checkPrefix xs index lt
+        Left ans -> do 
+            Act dir s (checkPrefix xs index lt)
+checkPrefix xs index lt = lt 
+
+prefixRule :: (Bag LocalType) -> IO()
+prefixRule sequent = do 
+    let xs = toList sequent
+    print xs
+    let newlist = S.mapWithIndex (checkPrefix xs) (S.fromList xs)
+    print newlist
+    -- check if any action is present in the list
+    if (any isAct xs) then putStrLn(show True) else putStrLn(show False)
+
+
+algorithmRun :: (Bag LocalType) -> Bool
+algorithmRun sequent = do 
+    okRule sequent
 
 printResult :: LocalType -> LocalType -> Bool -> IO()
-printResult subtype supertype True = putStrLn("Subtyping between " ++ show subtype ++ " and  " ++ show supertype ++ " holds.")
+printResult subtype supertype True = putStrLn("Subtyping between '" ++ show subtype ++ "' and  '" ++ show supertype ++ "' holds.")
 printResult subtype supertype False = putStrLn("Subtyping between " ++ show subtype ++ " and  " ++ show supertype ++ " does not hold.")
 
 printDual :: LocalType -> String
@@ -120,6 +192,16 @@ dualize lsubtype lsupertype mode = do
                     Right sequent
 
 
+test :: (Bag LocalType) -> (Bag LocalType)
+test sequent= do
+    let xs = toList sequent
+    let firstlist = map (\x -> if (isPrl x) then (checkTimes x) else x) xs
+    let newxs = filter isPrl xs
+    let secondlist = map checkTimes2 newxs
+    let mergedlist = combine2 secondlist firstlist
+    let sequent = fromList mergedlist 
+    -- CALL PREFIX RULE WITH SEQUENT
+    sequent
 
 sequentsAlg :: LocalType -> LocalType -> Bool ->  IO()
 sequentsAlg subtype supertype mode = do 
@@ -133,7 +215,10 @@ sequentsAlg subtype supertype mode = do
             -- and put the two types in a Multiset called sequent
             let sequent = ans
             -- start of alg. 
-            let newsequent = timesRule sequent
-            let okRuleans = okRule newsequent
+            let newsequent = test sequent
+            let list =toList newsequent
+            print list
+            let algResult = algorithmRun sequent
             -- End Of Algorithm
-            printResult subtype supertype okRuleans
+            prefixRule newsequent  
+            printResult subtype supertype algResult
