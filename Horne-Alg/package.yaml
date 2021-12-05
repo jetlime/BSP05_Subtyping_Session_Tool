@@ -27,6 +27,7 @@ dependencies:
 - filepath
 - cmdargs
 - time
+- multiset
 
 library:
   source-dirs: src
