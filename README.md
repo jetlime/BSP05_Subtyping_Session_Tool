@@ -1,4 +1,4 @@
-# Subtyping_Session_Tool_SourceCode
+# Subtyping Session Tool SourceCode
 
 The technical deliverable is based on the session subtyping tool built by Lorenzo Bacchiani in the python programming language using executable Haskell programs. His tool allows to apply different subtyping algorithms that will simulate subtyping in order to check subtyping of two session types. We will design and build into this tool a new asynchronous session subtyping algorithm proven by my tutor Ross Hornes. By extending it, the tool will support parallel session types, acting as internal communications.
 
