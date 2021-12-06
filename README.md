@@ -9,11 +9,11 @@ Folders :
 ```
 
 ```
-- compiling-Viewer : Source code from the viewer executable, to be modified such that we can visulize parallel subtyping under the form of an automata.
+- compiling-Viewer : Source code from the viewer executable, to be modified such that we can visulize parallel subtyping under the form of an automata.(Not developped yet)
 ```
 
 ```
-- Horne-Alg : Current work on the implementation of the parallel subtyping algorithm developped by Ross Hornes. Currently modifyng the parser such that the dual of '|' can be defined. Starting to implement the algorithm in haskell in the sequents.hs file.
+- Horne-Alg : Current work on the implementation of the parallel subtyping algorithm developped by Ross Hornes. 
 ```
 
 ```
@@ -21,5 +21,5 @@ Folders :
 ```
 
 ```
-- TEST_SubTyping_Session_Tool_Source_Code : The complete tool that executed with the already implemented modifications.
+- Final_SubTyping_Session_Tool: The complete tool that executed with the already implemented modifications.
 ```
