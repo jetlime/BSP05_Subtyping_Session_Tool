@@ -5,25 +5,17 @@ The technical deliverable is based on the session subtyping tool built by Lorenz
 Folders :
 
 ```
-- compiling : Orignial source code from the synchronous subtyping algorithm.
+- main-parser : Main parser of the tool modified such that the Parser supports parallel subtyping defined by "|". And the dual of "|", namely "$".
 ```
 
 ```
-- compiling-main-parser : Main parser of the tool modified such that the Parser 		    supports parallel subtyping defined by "|".
+- compiling-Viewer : Source code from the viewer executable, to be modified such that we can visulize parallel subtyping under the form of an automata.(Not developped yet)
 ```
 
 ```
-- compiling-Viewer : Source code from the viewer executable, to be modified such that we can visulize parallel subtyping under the form of an automata.
+- Horne-Alg : Current work on the implementation of the parallel subtyping algorithm developped by Ross Hornes. 
 ```
 
 ```
-- Horne-Alg : Current work on the implementation of the parallel subtyping algorithm developped by Ross Hornes. Currently modifyng the parser such that the dual of '|' can be defined. Starting to implement the algorithm in haskell in the sequents.hs file.
-```
-
-```
-- parallel-session-type : folder in which the final executable of the parallel subtyping algorithm will be generated.
-```
-
-```
-- TEST_SubTyping_Session_Tool_Source_Code : The complete tool that executed with the already implemented modifications.
+- Final_SubTyping_Session_Tool: The complete tool that executed with the already implemented modifications.
 ```
