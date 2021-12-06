@@ -15,16 +15,16 @@ This tutorial will make you understand how to use the parallel subtyping checker
 
 ### Requirements
 
-    * stack ([install](https://docs.haskellstack.org/en/stable/install_and_upgrade/))
-    * The following Haskell packages need to be installed (with cabal or stack for example),  
-        - base >= 4.7 && < 5
-        - pretty
-        - parsec 
-        - containers 
-        - filepath
-        - cmdargs
-        - time
-        - multiset
+* stack ([install](https://docs.haskellstack.org/en/stable/install_and_upgrade/))
+* The following Haskell packages need to be installed (with cabal or stack for example),  
+    - base >= 4.7 && < 5
+    - pretty
+    - parsec 
+    - containers 
+    - filepath
+    - cmdargs
+    - time
+    - multiset
 
 
 ### Compiling Haskell sources:
