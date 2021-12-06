@@ -17,9 +17,5 @@ Folders :
 ```
 
 ```
-- parallel-session-type : folder in which the final executable of the parallel subtyping algorithm will be generated.
-```
-
-```
 - Final_SubTyping_Session_Tool: The complete tool that executed with the already implemented modifications.
 ```
