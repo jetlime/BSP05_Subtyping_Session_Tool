@@ -98,84 +98,35 @@ printResult :: LocalType -> LocalType -> Bool -> IO()
 printResult subtype supertype True = putStrLn("Subtyping between '" ++ show subtype ++ "' and  '" ++ show supertype ++ "' holds.")
 printResult subtype supertype False = putStrLn("Subtyping between " ++ show subtype ++ " and  " ++ show supertype ++ " does not hold.")
 
-printDual :: LocalType -> String
-printDual (Act dir s lt) = (if dir == Send then ((printDirection Receive)++s++"; "++(printDual lt)) else (printDirection Send)++s++"; "++(printDual lt))
-printDual (Rec s lt) = "rec "++s++" . "++(printDual lt)
-printDual End = "end"
-printDual (Var s) =  s
-printDual (Choice dir xs) = (if dir == Send
-                                  then "+{"
-                                  else "&[")
-                                 ++
-                                 helper xs
-                                 ++
-                                 (if dir == Send
-                                  then "}"
-                                  else "]")
-  where helper (x:y:xs) = (printDual x)
-                          ++", "++(helper (y:xs))
-        helper [x] = printDual x
-        helper [] = []
-printDual (Prl s sep ss) = (printDual s)
-                                 ++
-                                 " "
-                                 ++ 
-                                 (if sep == Bar
-                                 then "$"
-                                 else "|")
-                                 ++
-                                 " "
-                                 ++
-                                 (printDual ss)
+getDual :: LocalType -> LocalType
+getDual (Act Send s lt) = (Act Receive s (getDual lt))
+getDual (Act Receive s lt) = (Act Send s (getDual lt))
+getDual (Prl lt Bar tl) = (Prl (getDual lt) BackAmpersand (getDual tl))
+getDual (Prl lt BackAmpersand tl) = (Prl (getDual lt) Bar (getDual tl))
+getDual lt = lt
 
-dualize :: LocalType -> LocalType -> Bool -> Either String  (MultiSet LocalType)
-dualize lsubtype lsupertype mode = do 
-    let subtype = printLocalType lsubtype
-    let supertype = printLocalType lsupertype
+dualize :: LocalType -> LocalType -> Bool -> (MultiSet LocalType)
+dualize subtype supertype True = do 
     -- if the mode is true then we dualize the supertype 
     -- otherwise we dualize the subtype
-    if mode 
-    then do 
-        let dualType = printDual lsupertype
-        -- convert the type from String to Localtype and parse it
-        case parseLocalType dualType of
-            Left err -> do 
-                let error = show err
-                Left error
-            Right ans -> do
-                -- create a list with the dualised supertype and the subtype
-                -- convert the list to a bag x 
-                let sequent = MultiSet.fromList [lsubtype ,ans]
-                --Right dualType
-                Right sequent
-    else 
-        do 
-            let dualType = printDual lsubtype
-            -- convert the type from String to Localtype and parse it
-            case parseLocalType dualType of
-                Left err -> do 
-                    let error = show err
-                    Left error
-                Right ans -> do
-                    -- create a list with the dualised subtype and the supertype
-                    -- convert the list to a bag x 
-                    let sequent = MultiSet.fromList [ans ,lsupertype]
-                    --Right dualType
-                    Right sequent
-
-
+    let dualType = getDual supertype
+    MultiSet.fromList [subtype ,dualType]
+dualize subtype supertype False = do 
+    let dualType = getDual subtype
+    -- convert the type from String to Localtype and parse it
+    -- create a list with the dualised subtype and the supertype
+    -- convert the list to a bag x 
+    MultiSet.fromList [dualType ,supertype]
 
 sequentsAlg :: LocalType -> LocalType -> Bool ->  IO()
 sequentsAlg subtype supertype mode = do 
     -- chose which type to dualize in function of mode
-    case dualize subtype supertype mode of 
-        Left err -> do 
-            -- An error occurs when no internal communications are present in either type
-            putStrLn(err)
-        Right ans -> do 
-            -- we dualized one of the types.
-            -- and put the two types in a Multiset called sequent
-            -- start of alg. 
-            let algResult = algorithmRun ans
-            -- End Of Algorithm
-            printResult subtype supertype algResult 
+    let ans = dualize subtype supertype mode
+    -- we dualized one of the types.
+    -- and put the two types in a Multiset called sequent
+    -- start of alg. 
+    let algResult = algorithmRun ans
+    let result = getDual (Prl (Act Send "a" (Act Send "c" End)) Bar (Act Receive "a" End)) 
+    putStrLn (printLocalType result)
+    -- End Of Algorithm
+    printResult subtype supertype algResult 

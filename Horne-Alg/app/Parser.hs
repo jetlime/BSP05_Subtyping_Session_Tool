@@ -44,8 +44,6 @@ data LocalType = Act Direction String LocalType     -- Send/Receive prefix
                | Prl LocalType Seperator LocalType
                deriving (Eq, Ord, Read)
 
-
-
 instance Show LocalType where
   show = printLocalType
 
