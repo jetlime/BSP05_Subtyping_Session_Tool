@@ -126,7 +126,5 @@ sequentsAlg subtype supertype mode = do
     -- and put the two types in a Multiset called sequent
     -- start of alg. 
     let algResult = algorithmRun ans
-    let result = getDual (Prl (Act Send "a" (Act Send "c" End)) Bar (Act Receive "a" End)) 
-    putStrLn (printLocalType result)
     -- End Of Algorithm
     printResult subtype supertype algResult 
