@@ -5,11 +5,7 @@ The technical deliverable is based on the session subtyping tool built by Lorenz
 Folders :
 
 ```
-- compiling : Orignial source code from the synchronous subtyping algorithm.
-```
-
-```
-- compiling-main-parser : Main parser of the tool modified such that the Parser 		    supports parallel subtyping defined by "|".
+- main-parser : Main parser of the tool modified such that the Parser supports parallel subtyping defined by "|". And the dual of "|", namely "$".
 ```
 
 ```
