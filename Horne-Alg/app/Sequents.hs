@@ -32,30 +32,26 @@ prefixRuleeApply sequent = do
     let second = fst xs
     if (MultiSet.null second) then (True) else False
 
--- check if the localtype has a Bar (|) inside 
-checkTimes :: LocalType -> LocalType
-checkTimes (Prl s Bar ss) = s
-checkTimes (Act dir s ss) = (Act dir s (checkTimes ss))
-
-checkTimes2 :: LocalType -> LocalType
-checkTimes2 (Prl s Bar ss) = ss
-checkTimes2 (Act dir s ss) = checkTimes2 ss
-
 -- check if TIME's rule can be applied
 checkTimesApply :: (MultiSet LocalType) -> Bool
 checkTimesApply xs = do 
     let newxs = MultiSet.filter isPrl xs
     null newxs
 
--- v2 of times rule
+checkTimes :: LocalType -> LocalType
+checkTimes (Prl s Bar ss) = s
+checkTimes (Act dir s ss) = (Act dir s (checkTimes ss))
+checkTimes lt = lt
+
+checkTimes2 :: LocalType -> LocalType
+checkTimes2 (Prl s Bar ss) = ss
+checkTimes2 (Act dir s ss) = (checkTimes2 ss)
+checkTimes2 lt =  lt
+
 timesRule :: (MultiSet LocalType) -> Bool
 timesRule sequent = do 
-    let result = MultiSet.map (\x -> if (isPrl x) then (checkTimes x) else x) sequent
-    let newxs = MultiSet.filter isPrl sequent
-    let secondlist = MultiSet.map checkTimes2 newxs
-    let sequent = MultiSet.union secondlist result
-    prefixRule sequent
-
+    let result = MultiSet.concatMap (\x -> if isPrl x then [checkTimes x, checkTimes2 x] else [x] ) sequent
+    prefixRule result
 
 findNext :: (MultiSet LocalType) -> LocalType -> Either LocalType LocalType
 findNext sequent (Act Send s ss) = do 
