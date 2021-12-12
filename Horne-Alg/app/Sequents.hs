@@ -30,12 +30,11 @@ checkJoin2 :: LocalType -> LocalType
 checkJoin2 (Choice Send listlt) = (last listlt)
 checkJoin2 lt = lt
 
-joinRule :: (MultiSet LocalType) -> IO()
+joinRule :: (MultiSet LocalType) -> Bool
 joinRule sequent = do 
     let leftSet = MultiSet.map checkJoin sequent
     let rightSet = MultiSet.map checkJoin2 sequent
-    print(MultiSet.toList leftSet)
-    print(MultiSet.toList rightSet)
+    if (prefixRule leftSet) then True else prefixRule rightSet
 
 prefixRuleeApply :: (MultiSet LocalType) -> Bool
 prefixRuleeApply sequent = do 
@@ -153,6 +152,6 @@ sequentsAlg subtype supertype mode = do
     writeToFile file ("Final Result: " ++ result)
     printResultIO subtype supertype (fst algResult)
     -- DEBUG JOIN RULE
-    let debuglist = MultiSet.fromList [(Choice Send [(Act Receive "b" End), (Act Send "a" End)]),(End)]
-    putStrLn "Example of Join rule applied to +{?b;end,!a;end}<=end"
-    joinRule debuglist
+    let debuglist = MultiSet.fromList [(Choice Send [(Act Receive "a" End), (Act Send "a" End)]),(Act Receive "a" End)]
+    putStrLn "Example of Join rule applied to +{?a;end,!a;end}<=?a;end"
+    printResultIO (Choice Send [(Act Receive "a" End), (Act Send "a" End)]) (Act Receive "a" End) (joinRule debuglist)
