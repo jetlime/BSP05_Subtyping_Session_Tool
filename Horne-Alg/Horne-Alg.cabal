@@ -38,6 +38,7 @@ library
     , multiset
     , parsec
     , pretty
+    , strict
     , time
   default-language: Haskell2010
 
@@ -60,6 +61,7 @@ executable Horne-Alg-exe
     , multiset
     , parsec
     , pretty
+    , strict
     , time
   default-language: Haskell2010
 
@@ -80,5 +82,6 @@ test-suite Horne-Alg-test
     , multiset
     , parsec
     , pretty
+    , strict
     , time
   default-language: Haskell2010

@@ -28,6 +28,7 @@ dependencies:
 - cmdargs
 - time
 - multiset
+- strict
 
 library:
   source-dirs: src
