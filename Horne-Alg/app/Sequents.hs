@@ -15,11 +15,27 @@ import qualified System.IO.Strict as SIO
 -- O(n)
 -- if the rule holds, return True
 -- if the rule does not hold, check if we can apply the TIMES rule if so then call the TIMES RULE
-okRule :: (MultiSet LocalType) -> Bool
+okRule :: (MultiSet LocalType) -> (Bool,IO())
 okRule sequent = do 
+    let file = "tmp/log.txt"
     let filteredSequent = MultiSet.filter isEnd sequent
-    if filteredSequent == sequent then True else 
-        if (checkTimesApply sequent == False) then (timesRule sequent) else ( if prefixRuleeApply sequent then (prefixRule sequent) else False)
+    if filteredSequent == sequent then do (True, putStrLn "ok")  else 
+            if (checkTimesApply sequent == False) then timesRule sequent else ( if prefixRuleeApply sequent then ((prefixRule sequent),putStrLn"Paul") else (False,writeToFile file ("OK rule does not apply:" ++ show(MultiSet.toList sequent))))
+
+checkJoin :: LocalType -> LocalType
+checkJoin (Choice Send listlt) = (head listlt)
+checkJoin lt = lt
+
+checkJoin2 :: LocalType -> LocalType
+checkJoin2 (Choice Send listlt) = (last listlt)
+checkJoin2 lt = lt
+
+joinRule :: (MultiSet LocalType) -> IO()
+joinRule sequent = do 
+    let leftSet = MultiSet.map checkJoin sequent
+    let rightSet = MultiSet.map checkJoin2 sequent
+    print(MultiSet.toList leftSet)
+    print(MultiSet.toList rightSet)
 
 prefixRuleeApply :: (MultiSet LocalType) -> Bool
 prefixRuleeApply sequent = do 
@@ -43,10 +59,12 @@ checkTimes2 (Prl s Bar ss) = ss
 checkTimes2 (Act dir s ss) = (checkTimes2 ss)
 checkTimes2 lt =  lt
 
-timesRule :: (MultiSet LocalType) -> Bool
+timesRule :: (MultiSet LocalType) -> (Bool,IO())
 timesRule sequent = do 
     let result = MultiSet.concatMap (\x -> if isPrl x then [checkTimes x, checkTimes2 x] else [x] ) sequent
-    prefixRule result
+    let file = "tmp/log.txt"
+    -- writeFile file ("TIMES rule: " ++  (show(MultiSet.toList result)))
+    (prefixRule result,writeToFile file ("Times rule: " ++ show(MultiSet.toList result)))
 
 findNext :: (MultiSet LocalType) -> LocalType -> Either LocalType LocalType
 findNext sequent (Act Send s ss) = do 
@@ -72,8 +90,6 @@ checkPrefix  sequent (Act dir s lt) = do
             Left (Act dir s lt)
 checkPrefix xs lt = Left lt
 
-
-
 prefixRule :: (MultiSet LocalType) ->  Bool
 prefixRule sequent = do 
     -- create a Multiset of types that can be removed (representing a list of choices)
@@ -81,63 +97,28 @@ prefixRule sequent = do
     let second = MultiSet.map removeDualAct (snd xs)
     let result = MultiSet.union second (fst xs)
     --if (any isAct xs) then putStrLn(show True) else putStrLn(show False)
-    okRule result
+    fst (okRule result)
 
-
-timesRuleTest:: (MultiSet LocalType) -> (MultiSet LocalType)
-timesRuleTest sequent = do 
-    let result = MultiSet.concatMap (\x -> if isPrl x then [checkTimes x, checkTimes2 x] else [x] ) sequent
-    result
-
-findNext2 :: (MultiSet LocalType) -> LocalType -> IO()
-findNext2 sequent (Act Send s ss) = do 
-    -- list of all dual types in the sequent
-    let result = MultiSet.filter (isActReceive s) sequent
-    print (MultiSet.toList result )
-findNext2 sequent (Act Receive s ss) = do 
-    -- list of all dual types in the sequent
-    let result = MultiSet.filter (isActSend s) sequent 
-    print (MultiSet.toList result)
-findNext2 _ lt = putStrLn "Nothing"    
-
-
-
-prefixBranches :: (MultiSet LocalType) -> IO()
-prefixBranches sequent = do
-    -- given the sequent, [(?a;end, 1),(!a;!b;end, 1),(!a;end, 1)]
-    -- MultiSet.mapMaybe iterates over sequent,
-    --let nlist = MultiSet.mapMaybe (findNext2 sequent) (sequent)
-    --print (MultiSet.toList nlist)
-    putStrLn "paul"
-    -- on ?a;end, it will call findNext, which will generate a list result
-    -- of all the dual actions in the sequent, [!a;!b;end,!a;end], this MultiSet is returned
-    -- 
-    -- given the sequent, generate a list of all the LocalTypes that have a dual in the sequent
-    -- e.G [?a;end, !a;?b;end, !a;end, end]
-    -- becomes [?a;end]
-    -- for every element in this list apply the prefix rule on the sequent
-    -- if find next obtains more then 1 result for find next generate a branching, in one 
-    -- branch the first choice is taken, in the other branch the other choice is taken
-    -- find next will find !a;?b;end and !a;end -> [!a;?b;end,!a;end]
-    -- it will apply the prefix rule on the first element, then continue from scratch, if at the
-    -- end, the end rule does not apply, we backtrack, and start again from the second element
-    -- in the list given, !a;end, if the OK rule holds in this case then the relation holds, if not
-    -- the relation does not hold because not other element his present in this branch list.
-    -- we obtain a list of sequents :
-    
-algorithmRun :: (MultiSet LocalType) -> Bool
+algorithmRun :: (MultiSet LocalType) -> (Bool,IO())
 algorithmRun sequent = do 
-    okRule sequent
+    (fst (okRule sequent),snd (okRule sequent))
 
-printResult :: LocalType -> LocalType -> Bool -> IO()
-printResult subtype supertype True = putStrLn("Subtyping between '" ++ show subtype ++ "' and  '" ++ show supertype ++ "' holds.")
-printResult subtype supertype False = putStrLn("Subtyping between " ++ show subtype ++ " and  " ++ show supertype ++ " does not hold.")
+printResultIO :: LocalType -> LocalType -> Bool -> IO()
+printResultIO subtype supertype True = putStrLn("Subtyping between '" ++ show subtype ++ "' and  '" ++ show supertype ++ "' holds.")
+printResultIO subtype supertype False = putStrLn("Subtyping between " ++ show subtype ++ " and  " ++ show supertype ++ " does not hold.")
+
+printResult :: LocalType -> LocalType -> Bool -> String
+printResult subtype supertype True = "Subtyping between '" ++ show subtype ++ "' and  '" ++ show supertype ++ "' holds."
+printResult subtype supertype False = "Subtyping between " ++ show subtype ++ " and  " ++ show supertype ++ " does not hold."
+
 
 getDual :: LocalType -> LocalType
 getDual (Act Send s lt) = (Act Receive s (getDual lt))
 getDual (Act Receive s lt) = (Act Send s (getDual lt))
 getDual (Prl lt Bar tl) = (Prl (getDual lt) BackAmpersand (getDual tl))
 getDual (Prl lt BackAmpersand tl) = (Prl (getDual lt) Bar (getDual tl))
+getDual (Choice Send lt) = (Choice Receive lt)
+getDual (Choice Receive lt) = (Choice Send lt)
 getDual lt = lt
 
 dualize :: LocalType -> LocalType -> Bool -> (MultiSet LocalType)
@@ -155,17 +136,23 @@ dualize subtype supertype False = do
 
 sequentsAlg :: LocalType -> LocalType -> Bool ->  IO()
 sequentsAlg subtype supertype mode = do 
-    writeToFile "tmp/log.txt" (printLocalType subtype ++ "<=" ++ printLocalType supertype)
+    -- path of the algortihm log file
+    let file = "tmp/log.txt"
+    -- empty the previous written file
+    writeFile file ""
+    writeToFile file (printLocalType subtype ++ "<=" ++ printLocalType supertype)
     -- chose which type to dualize in function of mode
     let ans = dualize subtype supertype mode
-    writeToFile "tmp/log.txt" (show(MultiSet.toList ans))
+    writeToFile file ("Dualize the supertype/subtype: " ++ show(MultiSet.toList ans))
     -- we dualized one of the types.
     -- and put the two types in a Multiset called sequent
     -- start of alg. 
-    -- DEBUG
-    let timedRule = timesRuleTest ans
-    findNext2 timedRule (Act Send "a" End)
-    prefixBranches ans
     let algResult = algorithmRun ans
     -- End Of Algorithm
-    printResult subtype supertype algResult 
+    let result = printResult subtype supertype (fst algResult)
+    writeToFile file ("Final Result: " ++ result)
+    printResultIO subtype supertype (fst algResult)
+    -- DEBUG JOIN RULE
+    let debuglist = MultiSet.fromList [(Choice Send [(Act Receive "b" End), (Act Send "a" End)]),(End)]
+    putStrLn "Example of Join rule applied to +{?b;end,!a;end}<=end"
+    joinRule debuglist
