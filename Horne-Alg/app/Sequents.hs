@@ -36,6 +36,20 @@ joinRule sequent = do
     let rightSet = MultiSet.map checkJoin2 sequent
     if (prefixRule leftSet) then True else prefixRule rightSet
 
+checkMeet :: LocalType -> LocalType
+checkMeet (Choice Receive listlt) = (head listlt)
+checkMeet lt = lt
+
+checkMeet2 :: LocalType -> LocalType
+checkMeet2 (Choice Receive listlt) = (last listlt)
+checkMeet2 lt = lt
+
+meetRule :: (MultiSet LocalType) -> Bool
+meetRule sequent = do
+    let leftSet = MultiSet.map checkMeet sequent
+    let rightSet = MultiSet.map checkMeet2 sequent
+    if (prefixRule leftSet) then True else prefixRule rightSet
+
 prefixRuleeApply :: (MultiSet LocalType) -> Bool
 prefixRuleeApply sequent = do 
     let xs = MultiSet.mapEither (checkPrefix sequent) (sequent)
