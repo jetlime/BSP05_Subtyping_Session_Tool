@@ -4,6 +4,10 @@ import Parser
 import qualified Data.Map as M
 import Data.Map (Map)    
 import qualified System.IO.Strict as SIO
+-- https://hackage.haskell.org/package/multiset-0.3.4.3/docs/Data-MultiSet.html#g:1
+import Data.MultiSet (MultiSet)
+import qualified Data.MultiSet as MultiSet
+import Data.These
 
 -- check if of type End
 isEnd :: LocalType -> Bool
@@ -36,3 +40,14 @@ writeToFile file content = do
     x <- SIO.readFile file
     writeFile file ("\n"++content)
     appendFile file x
+
+-- | /O(n)/. Map and separate the 'This' and 'That' or 'These' results 
+-- modified function of mapEither to map both cases in case f return These
+-- code of mapEither found in source code, 
+mapThese :: (Ord b, Ord c) => (a -> These b c) -> MultiSet a -> (MultiSet b, MultiSet c)
+mapThese f = (\(ls,rs) -> (MultiSet.fromOccurList ls, MultiSet.fromOccurList rs)) . mapThese' . MultiSet.toOccurList
+  where mapThese' [] = ([],[])
+        mapThese' ((x,n):xs) = case f x of
+           This  l -> let (ls,rs) = mapThese' xs in ((l,n):ls, rs)
+           That r -> let (ls,rs) = mapThese' xs in (ls, (r,n):rs)
+           These u i -> let (ls,rs) = mapThese' xs in ((u,n):ls, (i,n):rs)

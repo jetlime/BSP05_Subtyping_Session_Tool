@@ -7,6 +7,7 @@ import qualified Data.Map as M
 import Data.Map (Map)
 import Data.List as L
 import Data.List (elemIndex)
+import Data.These
 -- https://hackage.haskell.org/package/multiset-0.3.4.3/docs/Data-MultiSet.html#g:1
 import Data.MultiSet (MultiSet)
 import qualified Data.MultiSet as MultiSet
@@ -22,6 +23,21 @@ okRule sequent = do
     if filteredSequent == sequent then do (True, putStrLn "ok")  else 
             if (checkTimesApply sequent == False) then timesRule sequent else ( if prefixRuleeApply sequent then ((prefixRule sequent),putStrLn"Paul") else (False,writeToFile file ("OK rule does not apply:" ++ show(MultiSet.toList sequent))))
 
+checkPar :: LocalType-> These LocalType LocalType
+checkPar (Prl lt BackAmpersand ss) = These lt ss
+checkPar lt = This lt
+
+checkPar2 :: LocalType-> Either LocalType LocalType
+checkPar2 (Prl lt BackAmpersand ss) = Left ss
+checkPar2 lt = Left lt
+
+parRule :: (MultiSet LocalType) -> Bool
+parRule sequent = do 
+    let leftSet = mapThese checkPar sequent
+    let rightSet = MultiSet.mapEither checkPar2 sequent
+    if (prefixRule (fst leftSet)) && (prefixRule (snd leftSet)) then True else 
+        if (prefixRule (fst rightSet)) && (prefixRule (snd rightSet)) then True else False
+
 checkJoin :: LocalType -> LocalType
 checkJoin (Choice Send listlt) = (head listlt)
 checkJoin lt = lt
@@ -34,6 +50,20 @@ joinRule :: (MultiSet LocalType) -> Bool
 joinRule sequent = do 
     let leftSet = MultiSet.map checkJoin sequent
     let rightSet = MultiSet.map checkJoin2 sequent
+    if (prefixRule leftSet) then True else prefixRule rightSet
+
+checkMeet :: LocalType -> LocalType
+checkMeet (Choice Receive listlt) = (head listlt)
+checkMeet lt = lt
+
+checkMeet2 :: LocalType -> LocalType
+checkMeet2 (Choice Receive listlt) = (last listlt)
+checkMeet2 lt = lt
+
+meetRule :: (MultiSet LocalType) -> Bool
+meetRule sequent = do
+    let leftSet = MultiSet.map checkMeet sequent
+    let rightSet = MultiSet.map checkMeet2 sequent
     if (prefixRule leftSet) then True else prefixRule rightSet
 
 prefixRuleeApply :: (MultiSet LocalType) -> Bool
@@ -152,6 +182,10 @@ sequentsAlg subtype supertype mode = do
     writeToFile file ("Final Result: " ++ result)
     printResultIO subtype supertype (fst algResult)
     -- DEBUG JOIN RULE
-    let debuglist = MultiSet.fromList [(Choice Send [(Act Receive "a" End), (Act Send "a" End)]),(Act Receive "a" End)]
-    putStrLn "Example of Join rule applied to +{?a;end,!a;end}<=?a;end"
-    printResultIO (Choice Send [(Act Receive "a" End), (Act Send "a" End)]) (Act Receive "a" End) (joinRule debuglist)
+    let debuglist = MultiSet.fromList [(Choice Send [(Act Send "a" End), (Act Send "a" End)]),(Act Receive "a" End)]
+    putStrLn "Example of Join rule applied to +{!a;end,!a;end}<=?a;end"
+    printResultIO (Choice Send [(Act Send "a" End), (Act Send "a" End)]) (Act Receive "a" End) (joinRule debuglist)
+    -- DEBUG MEET RULE
+    let debuglist = MultiSet.fromList [(Choice Receive [(Act Receive "a" End), (Act Receive "a" End)]),(Act Send "a" End)]
+    putStrLn "Example of MEET rule applied to &{?a;end,?a;end}<=!a;end"
+    printResultIO (Choice Receive [(Act Receive "a" End), (Act Receive "a" End)]) (Act Send "a" End) (meetRule debuglist)
