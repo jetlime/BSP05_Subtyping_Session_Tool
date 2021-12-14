@@ -27,16 +27,18 @@ checkPar :: LocalType-> These LocalType LocalType
 checkPar (Prl lt BackAmpersand ss) = These lt ss
 checkPar lt = This lt
 
-checkPar2 :: LocalType-> Either LocalType LocalType
-checkPar2 (Prl lt BackAmpersand ss) = Left ss
-checkPar2 lt = Left lt
+checkPar2 :: LocalType-> These LocalType LocalType
+checkPar2 (Prl lt BackAmpersand ss) = These lt ss
+checkPar2 lt = That lt
 
-parRule :: (MultiSet LocalType) -> Bool
+parRule :: (MultiSet LocalType) -> IO()
 parRule sequent = do 
     let leftSet = mapThese checkPar sequent
-    let rightSet = MultiSet.mapEither checkPar2 sequent
-    if (prefixRule (fst leftSet)) && (prefixRule (snd leftSet)) then True else 
-        if (prefixRule (fst rightSet)) && (prefixRule (snd rightSet)) then True else False
+    let rightSet = mapThese checkPar2 sequent
+    print leftSet
+    print rightSet
+    --if (prefixRule (fst leftSet)) && (prefixRule (snd leftSet)) then True else 
+        --if (prefixRule (fst rightSet)) && (prefixRule (snd rightSet)) then True else False
 
 checkJoin :: LocalType -> LocalType
 checkJoin (Choice Send listlt) = (head listlt)
@@ -189,3 +191,9 @@ sequentsAlg subtype supertype mode = do
     let debuglist = MultiSet.fromList [(Choice Receive [(Act Receive "a" End), (Act Receive "a" End)]),(Act Send "a" End)]
     putStrLn "Example of MEET rule applied to &{?a;end,?a;end}<=!a;end"
     printResultIO (Choice Receive [(Act Receive "a" End), (Act Receive "a" End)]) (Act Send "a" End) (meetRule debuglist)
+    -- DEBUG PAR RULE
+    let testtype = (Prl (Act Send "a" End) BackAmpersand (Act Send "b" End))
+    let testtype2 = (Act Send "a" End)
+    parRule (MultiSet.fromList [testtype, testtype2])
+    -- Desired correct OUTPUT !a;end$!b;end <!a;end
+    -- [[(!a;end,2)],[(!b;end)]] or [[(!a;end,1),(!b;end,1)],[(!a;end)]]
