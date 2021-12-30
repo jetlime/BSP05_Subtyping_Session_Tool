@@ -9,6 +9,11 @@ import Data.MultiSet (MultiSet)
 import qualified Data.MultiSet as MultiSet
 import Data.These
 
+-- check if of type choice '+'
+isChoice :: LocalType -> Bool
+isChoice (Choice Send _) = True
+isChoice _ = False
+
 -- check if of type End
 isEnd :: LocalType -> Bool
 isEnd End = True

@@ -16,12 +16,13 @@ import qualified System.IO.Strict as SIO
 -- O(n)
 -- if the rule holds, return True
 -- if the rule does not hold, check if we can apply the TIMES rule if so then call the TIMES RULE
-okRule :: (MultiSet LocalType) -> (Bool,IO())
+okRule :: (MultiSet LocalType) -> Bool
 okRule sequent = do 
     let file = "tmp/log.txt"
     let filteredSequent = MultiSet.filter isEnd sequent
-    if filteredSequent == sequent then do (True, putStrLn "ok")  else 
-            if (checkTimesApply sequent == False) then timesRule sequent else ( if prefixRuleeApply sequent then ((prefixRule sequent),putStrLn"Paul") else (False,writeToFile file ("OK rule does not apply:" ++ show(MultiSet.toList sequent))))
+    -- writeToFile file ("OK rule does not apply:" ++ show(MultiSet.toList sequent))
+    if filteredSequent == sequent then do True  else False
+    -- if (checkTimesApply sequent == False) then timesRule sequent else ( if prefixRuleApply sequent then (prefixRule sequent) else False)
 
 checkPar :: LocalType-> These LocalType LocalType
 checkPar (Prl lt BackAmpersand ss) = These lt ss
@@ -46,15 +47,16 @@ checkJoin2 :: LocalType -> LocalType
 checkJoin2 (Choice Send listlt) = (last listlt)
 checkJoin2 lt = lt
 
-joinRule :: (MultiSet LocalType) -> Bool
+joinRule :: (MultiSet LocalType) -> [(MultiSet LocalType)]
 joinRule sequent = do 
     let leftSet = MultiSet.map checkJoin sequent
     let rightSet = MultiSet.map checkJoin2 sequent
-    if (prefixRule leftSet) then True else prefixRule rightSet
+    if sequent == rightSet then [rightSet] else [leftSet, rightSet] ++ joinRule leftSet ++ joinRule rightSet
+    -- if (prefixRule leftSet && prefixRule rightSet) then True else False
 
 checkMeet :: LocalType -> LocalType
 checkMeet (Choice Receive listlt) = (head listlt)
-checkMeet lt = lt
+checkMeet lt = lt 
 
 checkMeet2 :: LocalType -> LocalType
 checkMeet2 (Choice Receive listlt) = (last listlt)
@@ -66,8 +68,8 @@ meetRule sequent = do
     let rightSet = MultiSet.map checkMeet2 sequent
     if (prefixRule leftSet) then True else prefixRule rightSet
 
-prefixRuleeApply :: (MultiSet LocalType) -> Bool
-prefixRuleeApply sequent = do 
+prefixRuleApply :: (MultiSet LocalType) -> Bool
+prefixRuleApply sequent = do 
     let xs = MultiSet.mapEither (checkPrefix sequent) (sequent)
     let second = fst xs
     if (MultiSet.null second) then (True) else False
@@ -76,6 +78,11 @@ prefixRuleeApply sequent = do
 checkTimesApply :: (MultiSet LocalType) -> Bool
 checkTimesApply xs = do 
     let newxs = MultiSet.filter isPrl xs
+    null newxs
+
+checkJoinApply :: (MultiSet LocalType) -> Bool
+checkJoinApply xs = do 
+    let newxs = MultiSet.filter isChoice xs
     null newxs
 
 checkTimes :: LocalType -> LocalType
@@ -88,12 +95,12 @@ checkTimes2 (Prl s Bar ss) = ss
 checkTimes2 (Act dir s ss) = (checkTimes2 ss)
 checkTimes2 lt =  lt
 
-timesRule :: (MultiSet LocalType) -> (Bool,IO())
+timesRule :: (MultiSet LocalType) -> (MultiSet LocalType)
 timesRule sequent = do 
     let result = MultiSet.concatMap (\x -> if isPrl x then [checkTimes x, checkTimes2 x] else [x] ) sequent
-    let file = "tmp/log.txt"
-    -- writeFile file ("TIMES rule: " ++  (show(MultiSet.toList result)))
-    (prefixRule result,writeToFile file ("Times rule: " ++ show(MultiSet.toList result)))
+    --let content = "TIMES rule: " ++  (show(MultiSet.toList result))
+    --log <- writeToFile "tmp/log.txt" content
+    if result == sequent then sequent else timesRule result
 
 findNext :: (MultiSet LocalType) -> LocalType -> Either LocalType LocalType
 findNext sequent (Act Send s ss) = do 
@@ -125,12 +132,27 @@ prefixRule sequent = do
     let xs = MultiSet.mapEither (checkPrefix sequent) (sequent)
     let second = MultiSet.map removeDualAct (snd xs)
     let result = MultiSet.union second (fst xs)
+    if result == sequent then okRule result else prefixRule result
     --if (any isAct xs) then putStrLn(show True) else putStrLn(show False)
-    fst (okRule result)
 
-algorithmRun :: (MultiSet LocalType) -> (Bool,IO())
+asynchronousBlock :: (MultiSet LocalType) -> [(MultiSet LocalType)]
+asynchronousBlock sequent = do 
+    let timedSequent = timesRule sequent
+    let joinedSequent = joinRule timedSequent
+    joinedSequent
+
+algorithmRun :: (MultiSet LocalType) -> Bool
 algorithmRun sequent = do 
-    (fst (okRule sequent),snd (okRule sequent))
+    -- Apply the Asynchronous set of rule (TIME and JOIN) 
+    -- till no more can be applied
+    if okRule sequent then True else do 
+        -- A list of Multiset's, the list has one element if the JOIN rule was not applied
+        -- Otherwise one element in the list corresponds to one branch, all elements in one list 
+        -- must hold for the subtyping relation to hold
+        let result = asynchronousBlock sequent
+        -- all asynchronous rule were applied, the synchronous one's will now be applied.
+        -- check if every branch holds with the prefix rule
+        all prefixRule result
 
 printResultIO :: LocalType -> LocalType -> Bool -> IO()
 printResultIO subtype supertype True = putStrLn("Subtyping between '" ++ show subtype ++ "' and  '" ++ show supertype ++ "' holds.")
@@ -139,7 +161,6 @@ printResultIO subtype supertype False = putStrLn("Subtyping between " ++ show su
 printResult :: LocalType -> LocalType -> Bool -> String
 printResult subtype supertype True = "Subtyping between '" ++ show subtype ++ "' and  '" ++ show supertype ++ "' holds."
 printResult subtype supertype False = "Subtyping between " ++ show subtype ++ " and  " ++ show supertype ++ " does not hold."
-
 
 getDual :: LocalType -> LocalType
 getDual (Act Send s lt) = (Act Receive s (getDual lt))
@@ -178,13 +199,23 @@ sequentsAlg subtype supertype mode = do
     -- start of alg. 
     let algResult = algorithmRun ans
     -- End Of Algorithm
-    let result = printResult subtype supertype (fst algResult)
+    let result = printResult subtype supertype algResult
     writeToFile file ("Final Result: " ++ result)
-    printResultIO subtype supertype (fst algResult)
+    printResultIO subtype supertype algResult
+    let sequent = ans
+    let res3 = timesRule sequent
+    print(MultiSet.toList res3)
+    let res4 = joinRule sequent
+    print(res4)
+    
+
+    {-
     -- DEBUG JOIN RULE
-    let debuglist = MultiSet.fromList [(Choice Send [(Act Send "a" End), (Act Send "a" End)]),(Act Receive "a" End)]
-    putStrLn "Example of Join rule applied to +{!a;end,!a;end}<=?a;end"
-    printResultIO (Choice Send [(Act Send "a" End), (Act Send "a" End)]) (Act Receive "a" End) (joinRule debuglist)
+    let debuglist = MultiSet.fromList [(Choice Send [(Act Send "a" End), (Act Send "b" End)]),(Act Receive "a" End)]
+    putStrLn "Example of Join rule applied to +{!a;end,!b;end}<=?a;end"
+    --printResultIO (Choice Send [(Act Send "a" End), (Act Send "a" End)]) (Act Receive "a" End) 
+    let res2 = joinRule debuglist
+    print(head res2)
     -- DEBUG MEET RULE
     let debuglist = MultiSet.fromList [(Choice Receive [(Act Receive "a" End), (Act Receive "a" End)]),(Act Send "a" End)]
     putStrLn "Example of MEET rule applied to &{?a;end,?a;end}<=!a;end"
@@ -197,3 +228,4 @@ sequentsAlg subtype supertype mode = do
     -- OUTPUT, [[(!a;end,1),(?a;end,1)], [end,1]] or [[(?a;end,1),(end,1)],[(!a;end)]]
     -- In here the first branch holds, subtyping holds, no need to check the second branch !
     printResultIO testtype testtype2 parresult
+    -}
