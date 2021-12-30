@@ -51,7 +51,7 @@ joinRule :: (MultiSet LocalType) -> [(MultiSet LocalType)]
 joinRule sequent = do 
     let leftSet = MultiSet.map checkJoin sequent
     let rightSet = MultiSet.map checkJoin2 sequent
-    if sequent == rightSet then [rightSet] else [leftSet, rightSet] ++ joinRule leftSet ++ joinRule rightSet
+    if sequent == rightSet then [] else [leftSet, rightSet] ++ joinRule leftSet ++ joinRule rightSet
     -- if (prefixRule leftSet && prefixRule rightSet) then True else False
 
 checkMeet :: LocalType -> LocalType
@@ -139,7 +139,7 @@ asynchronousBlock :: (MultiSet LocalType) -> [(MultiSet LocalType)]
 asynchronousBlock sequent = do 
     let timedSequent = timesRule sequent
     let joinedSequent = joinRule timedSequent
-    joinedSequent
+    if joinedSequent == [] then [timedSequent] else joinedSequent
 
 algorithmRun :: (MultiSet LocalType) -> Bool
 algorithmRun sequent = do 
@@ -205,7 +205,8 @@ sequentsAlg subtype supertype mode = do
     let sequent = ans
     let res3 = timesRule sequent
     print(MultiSet.toList res3)
-    let res4 = joinRule sequent
+    let debuglist = MultiSet.fromList [(Choice Send [(Act Send "a" End), (Act Send "b" End)]),(Act Receive "a" End)]
+    let res4 = joinRule debuglist
     print(res4)
     
 
