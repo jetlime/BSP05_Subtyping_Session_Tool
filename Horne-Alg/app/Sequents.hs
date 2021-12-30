@@ -85,6 +85,16 @@ checkJoinApply xs = do
     let newxs = MultiSet.filter isChoice xs
     null newxs
 
+checkMeetApply :: (MultiSet LocalType) -> Bool
+checkMeetApply xs = do 
+    let newxs = MultiSet.filter isChoiceReceive  xs
+    null newxs
+
+checkParApply :: (MultiSet LocalType) -> Bool
+checkParApply xs = do 
+    let newxs = MultiSet.filter isPar xs
+    null newxs
+
 checkTimes :: LocalType -> LocalType
 checkTimes (Prl s Bar ss) = s
 checkTimes (Act dir s ss) = (Act dir s (checkTimes ss))
@@ -141,6 +151,12 @@ asynchronousBlock sequent = do
     let joinedSequent = joinRule timedSequent
     if joinedSequent == [] then [timedSequent] else joinedSequent
 
+synchronousBlock :: (MultiSet LocalType) -> Bool
+synchronousBlock sequent = do
+    if (checkParApply sequent)== False then parRule sequent else do 
+        if (checkMeetApply sequent)==False then meetRule sequent else do 
+            prefixRule sequent
+
 algorithmRun :: (MultiSet LocalType) -> Bool
 algorithmRun sequent = do 
     -- Apply the Asynchronous set of rule (TIME and JOIN) 
@@ -152,7 +168,7 @@ algorithmRun sequent = do
         let result = asynchronousBlock sequent
         -- all asynchronous rule were applied, the synchronous one's will now be applied.
         -- check if every branch holds with the prefix rule
-        all prefixRule result
+        all synchronousBlock result
 
 printResultIO :: LocalType -> LocalType -> Bool -> IO()
 printResultIO subtype supertype True = putStrLn("Subtyping between '" ++ show subtype ++ "' and  '" ++ show supertype ++ "' holds.")

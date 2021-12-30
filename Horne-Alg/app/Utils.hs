@@ -28,6 +28,14 @@ isAct :: LocalType -> Bool
 isAct (Act dir _ lt) = True
 isAct _ = False
 
+isPar :: LocalType -> Bool
+isPar (Prl s BackAmpersand ss) = True
+isPar (Act dir s ss) = isPar ss
+isPar _ = False
+
+isChoiceReceive :: LocalType -> Bool
+isChoiceReceive (Choice Receive _) = True
+isChoiceReceive _ = False
 isActSend :: String -> LocalType -> Bool
 isActSend s (Act Send x _) = if s==x then True else False
 isActSend _ _ = False
