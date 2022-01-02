@@ -4,6 +4,7 @@ import Data.List as L
 import Data.Set as S
 import Data.Map as M
 import Data.Char (toUpper)
+import Data.Char( digitToInt )
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath.Posix (takeDirectory)
 import Data.Hashable
@@ -38,6 +39,11 @@ data Machine = Machine
                , accepts :: [State]
                } deriving (Show, Eq, Ord)
 
+isMember n [] = False
+isMember n (x:xs)
+    | n == x = True
+    | otherwise = isMember n xs
+
 writeToFile :: FilePath -> String -> IO()
 writeToFile path content = do
   createDirectoryIfMissing True $ takeDirectory path
@@ -49,14 +55,14 @@ printMachine m =
   let header = "digraph ICTS { \n "
       footer = "}\n "
       nodes = L.map (\x ->
-                      "q"++(x)++" [shape = \"rectangle\" label=\""++(x)
-                      ++"\""++
-                      (
-                        if x==(tinit m)
-                        then " penwidth = 3"
-                        else ""
-                      )
-                      ++"]; \n "
+                        "q"++(x)++" [shape = \"rectangle\" label=\""++(x)
+                        ++"\""++
+                        (
+                          if x==(tinit m)
+                          then " penwidth = 3"
+                          else ""
+                        )
+                        ++"]; \n "
                     ) $ states m
       transi = L.map (\(s,(l,t)) -> "q"++(s)++" -> "++"q"++(t)++" [label=\""++(mprintLabel l)++"\"]"++
                                 "; \n ") $ transitions m
@@ -65,8 +71,56 @@ printMachine m =
         mprintLabel (Send,a) = "!"++(a)
         mprintLabel (Receive,a) = "?"++(a)
 
+printMachine2 :: Machine -> Machine -> String
+printMachine2 m2 m1 =
+  let header = "digraph ICTS { \n "
+      footer = "}\n "
+      nodes = L.map (\x ->
+                        if isMember x (states m1) == False
+                        then 
+                        "q"++(x)++" [shape = \"rectangle\" label=\""++(x)
+                        ++"\""++
+                        (
+                          if x==(tinit m2)
+                          then " penwidth = 3"
+                          else ""
+                        )
+                        ++"]; \n "
+                        else 
+                          if (L.last (states m1)) == x
+                          then 
+                          "q"++(x)++" [shape = \"rectangle\" label=\""++(x)
+                          ++"\""++
+                          (
+                            if x==(tinit m2)
+                            then " penwidth = 3"
+                            else ""
+                          )
+                          ++"]; \n "
+                          else ""
+                    ) $ states m2
+      transi = L.map (\(s,(l,t)) -> 
+                              if isMember s (states m1) == False
+                              then 
+                              "q"++(s)++" -> "++"q"++(t)++" [label=\""++(mprintLabel l)++"\"]"++
+                              "; \n "
+                              else 
+                                if (L.last (states m1)) == s
+                                then 
+                                "q"++(s)++" -> "++"q"++(t)++" [label=\""++(mprintLabel l)++"\"]"++
+                                "; \n "
+                                else ""
+                              ) $ transitions m2
+  in header++(foldstring nodes)++(foldstring transi)++footer
+  where foldstring s = L.foldr (++) "" s
+        mprintLabel (Send,a) = "!"++(a)
+        mprintLabel (Receive,a) = "?"++(a)
+
 machine2file :: Machine -> String -> IO ()
 machine2file m f = writeToFile ("tmp/"++f++"_cfsm.dot") (printMachine m)
+
+machine2file2 :: Machine -> Machine -> String -> IO()
+machine2file2 m2 m1 f = writeToFile ("tmp/"++f++"_cfsm.dot") (printMachine2 m2 m1)
 
 
 genState :: String -> (Map String State) -> LocalType -> State
@@ -388,9 +442,32 @@ type2Machine nomin s t = let nedges = L.nub $ genEdges ninit M.empty [] t
         genEdges prev map acc (Choice dir xs) = L.foldr (++) [] (L.map (genEdges prev map acc) xs)
         genEdges prev map acc (End) = []
         genEdges prev map acc (Var x) = []
-        genEdges prev map acc (Prl xs) = L.foldr (++) [] (L.map (genEdges prev map acc) xs) 
-          
+        genEdges prev map acc (Prl l ll s) = (genEdges prev map acc l)      
+    
+type2Machine2 :: Bool -> String -> LocalType -> Machine
+type2Machine2 nomin s t = let
+                             nedges = L.nub $ genEdges ninit M.empty [] t
+                             nstates =  L.nub $ ninit:(L.foldr (++) [] $ L.map (\(s,(m,t)) -> [s,t]) nedges)
+                             ninit = genState (stToUpper (s++"o")) M.empty t
+                             tmpmachine = Machine { states = nstates
+                                                  , tinit = ninit
+                                                  , transitions = nedges
+                                                  , accepts = nstates
+                                                  }
+                             fun = if nomin
+                                   then id
+                                   else minimizeHop
+                         in fun $
+                            rename (naming tmpmachine) tmpmachine
 
+  where genEdges prev map acc (Rec s t) = genEdges prev (M.insert s prev map) acc t
+        genEdges prev map acc (Act dir s t) =
+          let next = genState ((stToUpper prev)++(stToUpper s)) map t
+          in (prev, ((dir, mkMessage s), next)):(genEdges next map acc t)
+        genEdges prev map acc (Choice dir xs) = L.foldr (++) [] (L.map (genEdges prev map acc) xs)
+        genEdges prev map acc (End) = []
+        genEdges prev map acc (Var x) = []
+        genEdges prev map acc (Prl l ll s) = (genEdges prev map acc s)      
 
 minimizeHop :: Machine -> Machine
 minimizeHop m = translateFromHopcroft . H.hopcroft . translate2Hopcroft $ m

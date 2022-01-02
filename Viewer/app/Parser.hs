@@ -21,27 +21,36 @@ import qualified Text.PrettyPrint as PP
 import Text.PrettyPrint (Doc, (<>), (<+>))
 
 
+-- check if a char is in a string
+charInString :: Char -> String -> Bool
+charInString c "" = False
+charInString c (x:xs)
+    | c == x = True
+    | otherwise = charInString c xs
 
 type Environment = Map String (Int, LocalType)
 
 data Direction = Send | Receive
                deriving (Show, Eq, Ord, Read)
 
-
+data Seperator = Bar | BackAmpersand
+               deriving (Show, Eq, Ord, Read)
 
 data LocalType = Act Direction String LocalType     -- Send/Receive prefix
                | Rec String LocalType      -- Recursive def
                | Var String                -- Recursive call
                | End                       -- End
                | Choice Direction [LocalType]
-               | Prl [LocalType]
+               | Prl LocalType Seperator LocalType
                deriving (Eq, Ord, Read)
-
-
 
 instance Show LocalType where
   show = printLocalType
 
+isPrl :: LocalType -> Bool
+isPrl (Prl s sep ss) = True
+isPrl (Act dir s ss) = isPrl ss
+isPrl _ = False
 
 dual :: Direction -> Direction
 dual Send = Receive
@@ -123,7 +132,7 @@ wellFormed = wellFormed_ []
         wellFormed_ vars (Choice Receive list) = (F.and $ L.map isReceive list)
                                             && (disjointPrefix list)
                                             && (F.and $ L.map (wellFormed_ vars) list)
-        wellFormed_ vars (Prl list) = True
+        wellFormed_ vars (Prl s sep ss) = (wellFormed s) && (wellFormed ss)
 
 
 typeDepth :: LocalType -> Int
@@ -269,7 +278,7 @@ languageDef =
            , T.identStart      = alphaNum
            , T.identLetter     = alphaNum
            , T.reservedNames   = []
-           , T.reservedOpNames = ["!", "?", "+", "&", "|"]
+           , T.reservedOpNames = ["!", "?", "+", "&", "|", "$"]
            , T.caseSensitive = True
            }
 
@@ -302,36 +311,36 @@ ltparser =  do { symbol "!"
               ; return $ Rec var cont
               }
             <|>
-           do { list <- sepBy1 ltparser2 (char '|' <* spaces)
-              ; return $ Prl list
-           } 
-           <|>
-           do { symbol "end"
-              ; return  End
-              }
-           <|>
-           
-           do { var <-  identifier
-              ; return $ Var var
-              }
-           <|> -- REDUNDANCY TO MAKE IT EASIER TO TYPE TYPES
-           do { symbol "{"
+            do { dir <- (symbol "+" <|> symbol "&")
+              ; choice <- choiceParser
+              ; return choice
+            }
+            <|>
+            do { symbol "{"
               ; list <- sepBy1 ltparser (char ',' <* spaces)
               ; symbol "}"
               ; return $ Choice (if (isExtChoice list) then Receive else Send) list
               }
            <|>
-           do { symbol "["
+            do { symbol "["
               ; list <- sepBy1 ltparser (char ',' <* spaces)
               ; symbol "]"
               ; return $ Choice (if (isIntChoice list) then Send else Receive) list
               }
+           <|> 
+            do { cont <- ltparser2
+              ; sep <- (symbol "|" <|> symbol "$")
+              ; cont2 <- ltparser2
+              ; return $ Prl cont (if (sep == "|")  then Bar else BackAmpersand) cont2
+           } 
            <|>
-           do { dir <- (symbol "+" <|> symbol "&")
-              ; choice <- choiceParser
-              ; return choice
+            do { symbol "end"
+              ; return  End
               }
-
+           <|>
+            do { var <-  identifier
+              ; return $ Var var
+              }
 
 ltparser2 :: Parser LocalType
 ltparser2 =  do { symbol "!"
@@ -355,6 +364,11 @@ ltparser2 =  do { symbol "!"
               ; return $ Rec var cont
               }
            <|>
+           do { dir <- (symbol "+" <|> symbol "&")
+              ; choice <- choiceParser2
+              ; return choice
+              }
+           <|>
            do { symbol "end"
               ; return  End
               }
@@ -375,11 +389,6 @@ ltparser2 =  do { symbol "!"
               ; symbol "]"
               ; return $ Choice (if (isIntChoice list) then Send else Receive) list
               }
-           <|>
-           do { dir <- (symbol "+" <|> symbol "&")
-              ; choice <- choiceParser2
-              ; return choice
-              }
 
 choiceParser =
   do { symbol "["
@@ -397,13 +406,13 @@ choiceParser =
 
 choiceParser2 =
   do { symbol "["
-     ; list <- sepBy1 ltparser (char ',' <* spaces)
+     ; list <- sepBy1 ltparser2 (char ',' <* spaces)
      ; symbol "]"
      ; return $ Choice (if (isIntChoice list) then Send else Receive) list
      }
   <|>
   do { symbol "{"
-     ; list <- sepBy1 ltparser (char ',' <* spaces)
+     ; list <- sepBy1 ltparser2 (char ',' <* spaces)
      ; symbol "}"
      ; return $ Choice (if (isIntChoice list) then Send else Receive) list
      }
@@ -412,11 +421,14 @@ choiceParser2 =
 mainparser :: Parser LocalType
 mainparser =  whiteSpace >> ltparser <* eof
 
+mainparser2:: Parser LocalType
+mainparser2 =  whiteSpace >> ltparser2 <* eof
 
 
+-- if we work with a parallel session type, then use another parser
 parseLocalType :: String -> Either ParseError LocalType
-parseLocalType inp =  parse mainparser "" inp
-
+parseLocalType inp =  do 
+   (if (charInString '$' inp == True || charInString '|' inp == True) then (parse mainparser "" inp) else (parse mainparser2 "" inp))
 
 
 printDirection :: Direction -> String
@@ -443,10 +455,17 @@ printLocalType (Choice dir xs) = (if dir == Send
                           ++", "++(helper (y:xs))
         helper [x] = printLocalType x
         helper [] = []
-printLocalType (Prl list) = helper list
-   where helper(x:y:xs) = (printLocalType x)++ " | "++helper(y:xs)
-         helper [x] = printLocalType x
-         helper[] = []
+printLocalType (Prl s sep ss) = (printLocalType s)
+                                 ++
+                                 " "
+                                 ++ 
+                                 (if sep == Bar
+                                 then "|"
+                                 else "$")
+                                 ++
+                                 " "
+                                 ++
+                                 (printLocalType ss)
 
 
 

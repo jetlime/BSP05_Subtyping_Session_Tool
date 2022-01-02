@@ -1,4 +1,3 @@
-
-Final Result: Subtyping between ?a; ?b; end | end and  ?a; ?b; end | end does not hold.
-Dualize the supertype/subtype: [!a; !b; end $ end,?a; ?b; end | end]
-?a; ?b; end | end<=?a; ?b; end | end
+Final Result: Subtyping between '?a; ?b; end | !a; !b; end' and  'end' holds.
+Dualize the supertype/subtype: [?a; ?b; end | !a; !b; end,end]
+?a; ?b; end | !a; !b; end<=end

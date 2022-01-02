@@ -47,6 +47,10 @@ data LocalType = Act Direction String LocalType     -- Send/Receive prefix
 instance Show LocalType where
   show = printLocalType
 
+isPrl :: LocalType -> Bool
+isPrl (Prl s sep ss) = True
+isPrl (Act dir s ss) = isPrl ss
+isPrl _ = False
 
 dual :: Direction -> Direction
 dual Send = Receive
@@ -312,32 +316,31 @@ ltparser =  do { symbol "!"
               ; return choice
             }
             <|>
-           do { cont <- ltparser2
-              ; sep <- (symbol "|" <|> symbol "$")
-              ; cont2 <- ltparser2
-              ; return $ Prl cont (if (sep == "|")  then Bar else BackAmpersand) cont2
-           } 
-           <|>
-           do { symbol "end"
-              ; return  End
-              }
-           <|>
-           do { var <-  identifier
-              ; return $ Var var
-              }
-           <|> -- REDUNDANCY TO MAKE IT EASIER TO TYPE TYPES
-           do { symbol "{"
+            do { symbol "{"
               ; list <- sepBy1 ltparser (char ',' <* spaces)
               ; symbol "}"
               ; return $ Choice (if (isExtChoice list) then Receive else Send) list
               }
            <|>
-           do { symbol "["
+            do { symbol "["
               ; list <- sepBy1 ltparser (char ',' <* spaces)
               ; symbol "]"
               ; return $ Choice (if (isIntChoice list) then Send else Receive) list
               }
-
+           <|> 
+            do { cont <- ltparser2
+              ; sep <- (symbol "|" <|> symbol "$")
+              ; cont2 <- ltparser2
+              ; return $ Prl cont (if (sep == "|")  then Bar else BackAmpersand) cont2
+           } 
+           <|>
+            do { symbol "end"
+              ; return  End
+              }
+           <|>
+            do { var <-  identifier
+              ; return $ Var var
+              }
 
 ltparser2 :: Parser LocalType
 ltparser2 =  do { symbol "!"
@@ -362,7 +365,7 @@ ltparser2 =  do { symbol "!"
               }
            <|>
            do { dir <- (symbol "+" <|> symbol "&")
-              ; choice <- choiceParser
+              ; choice <- choiceParser2
               ; return choice
               }
            <|>
@@ -403,13 +406,13 @@ choiceParser =
 
 choiceParser2 =
   do { symbol "["
-     ; list <- sepBy1 ltparser (char ',' <* spaces)
+     ; list <- sepBy1 ltparser2 (char ',' <* spaces)
      ; symbol "]"
      ; return $ Choice (if (isIntChoice list) then Send else Receive) list
      }
   <|>
   do { symbol "{"
-     ; list <- sepBy1 ltparser (char ',' <* spaces)
+     ; list <- sepBy1 ltparser2 (char ',' <* spaces)
      ; symbol "}"
      ; return $ Choice (if (isIntChoice list) then Send else Receive) list
      }

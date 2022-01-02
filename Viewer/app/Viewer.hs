@@ -37,7 +37,6 @@ subargs = Subtyping
 getLocalTypeString :: String -> IO String
 getLocalTypeString s = readFile s
 
-
 main :: IO ()
 main = do
   pargs <- cmdArgs (modes [subargs])
@@ -49,7 +48,14 @@ main = do
           then putStrLn "Error in local type (not well-formed)."
           else
             do
-             let m1 = type2Machine False "-" ans
-             machine2file m1 "type"
-             putStrLn "Done"
+             if isPrl ans then do 
+              let m1 = type2Machine False "-" ans
+              let m2 = type2Machine2 False "-" ans 
+              machine2file m1 "type" 
+              machine2file2 m2 m1 "type2"
+              putStrLn "Done" 
+             else do
+              let m1 = type2Machine False "-" ans
+              machine2file m1 "type" 
+              putStrLn "Done"
   return ()

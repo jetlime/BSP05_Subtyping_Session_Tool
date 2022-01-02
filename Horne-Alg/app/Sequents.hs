@@ -22,7 +22,6 @@ okRule sequent = do
     let filteredSequent = MultiSet.filter isEnd sequent
     -- writeToFile file ("OK rule does not apply:" ++ show(MultiSet.toList sequent))
     if filteredSequent == sequent then do True  else False
-    -- if (checkTimesApply sequent == False) then timesRule sequent else ( if prefixRuleApply sequent then (prefixRule sequent) else False)
 
 checkPar :: LocalType-> These LocalType LocalType
 checkPar (Prl lt BackAmpersand ss) = These lt ss
@@ -66,7 +65,7 @@ meetRule :: (MultiSet LocalType) -> Bool
 meetRule sequent = do
     let leftSet = MultiSet.map checkMeet sequent
     let rightSet = MultiSet.map checkMeet2 sequent
-    if (prefixRule leftSet) then True else prefixRule rightSet
+    if (prefixRule leftSet) then do True else prefixRule rightSet
 
 prefixRuleApply :: (MultiSet LocalType) -> Bool
 prefixRuleApply sequent = do 
@@ -108,8 +107,6 @@ checkTimes2 lt =  lt
 timesRule :: (MultiSet LocalType) -> (MultiSet LocalType)
 timesRule sequent = do 
     let result = MultiSet.concatMap (\x -> if isPrl x then [checkTimes x, checkTimes2 x] else [x] ) sequent
-    --let content = "TIMES rule: " ++  (show(MultiSet.toList result))
-    --log <- writeToFile "tmp/log.txt" content
     if result == sequent then sequent else timesRule result
 
 findNext :: (MultiSet LocalType) -> LocalType -> Either LocalType LocalType
@@ -143,7 +140,6 @@ prefixRule sequent = do
     let second = MultiSet.map removeDualAct (snd xs)
     let result = MultiSet.union second (fst xs)
     if result == sequent then okRule result else prefixRule result
-    --if (any isAct xs) then putStrLn(show True) else putStrLn(show False)
 
 asynchronousBlock :: (MultiSet LocalType) -> [(MultiSet LocalType)]
 asynchronousBlock sequent = do 
@@ -221,28 +217,8 @@ sequentsAlg subtype supertype mode = do
     let sequent = ans
     let res3 = timesRule sequent
     print(MultiSet.toList res3)
-    let debuglist = MultiSet.fromList [(Choice Send [(Act Send "a" End), (Act Send "b" End)]),(Act Receive "a" End)]
-    let res4 = joinRule debuglist
-    print(res4)
-    
-
-    {-
-    -- DEBUG JOIN RULE
-    let debuglist = MultiSet.fromList [(Choice Send [(Act Send "a" End), (Act Send "b" End)]),(Act Receive "a" End)]
-    putStrLn "Example of Join rule applied to +{!a;end,!b;end}<=?a;end"
-    --printResultIO (Choice Send [(Act Send "a" End), (Act Send "a" End)]) (Act Receive "a" End) 
-    let res2 = joinRule debuglist
-    print(head res2)
-    -- DEBUG MEET RULE
-    let debuglist = MultiSet.fromList [(Choice Receive [(Act Receive "a" End), (Act Receive "a" End)]),(Act Send "a" End)]
-    putStrLn "Example of MEET rule applied to &{?a;end,?a;end}<=!a;end"
-    printResultIO (Choice Receive [(Act Receive "a" End), (Act Receive "a" End)]) (Act Send "a" End) (meetRule debuglist)
-    -- DEBUG PAR RULE
-    let testtype = (Prl (Act Send "a" End) BackAmpersand (End))
-    let testtype2 = (Act Receive "a" End)
-    let parresult = parRule (MultiSet.fromList [testtype, testtype2])
-    -- Desired correct which is also obtained: INPUT, !a;end$end <?a;end
-    -- OUTPUT, [[(!a;end,1),(?a;end,1)], [end,1]] or [[(?a;end,1),(end,1)],[(!a;end)]]
-    -- In here the first branch holds, subtyping holds, no need to check the second branch !
-    printResultIO testtype testtype2 parresult
-    -}
+    let debuglist = MultiSet.fromList [(Choice Send [(Act Send "a" End), (Act Send "a" End)]),(Act Receive "a" End)]
+    -- +{!a;end,!b;end} < !a;end
+    -- +{!a;end,!b;end},?a;end
+    let res4 = algorithmRun debuglist
+    printResultIO (Choice Send [(Act Send "a" End), (Act Send "a" End)]) (Act Send "a" End) res4

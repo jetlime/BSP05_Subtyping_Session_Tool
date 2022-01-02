@@ -51,7 +51,7 @@ removeDualAct lt = lt
 writeToFile :: FilePath -> String -> IO()
 writeToFile file content = do 
     x <- SIO.readFile file
-    writeFile file ("\n"++content)
+    writeFile file (content++"\n")
     appendFile file x
 
 -- | /O(n)/. Map and separate the 'This' and 'That' or 'These' results 
