@@ -47,10 +47,6 @@ data LocalType = Act Direction String LocalType     -- Send/Receive prefix
 instance Show LocalType where
   show = printLocalType
 
-isPrl :: LocalType -> Bool
-isPrl (Prl s sep ss) = True
-isPrl (Act dir s ss) = isPrl ss
-isPrl _ = False
 
 dual :: Direction -> Direction
 dual Send = Receive
