@@ -8,7 +8,7 @@ import Data.Foldable as F
 import Data.Tree as T
 import Data.Maybe (mapMaybe)
 import Data.Map (Map, empty, map, insert, unionWith, unionsWith, singleton,(!),toList)
-
+import Data.Typeable
 -- Parser
 import Text.ParserCombinators.Parsec
 import qualified Text.ParserCombinators.Parsec.Token as T
@@ -21,45 +21,40 @@ import qualified Text.PrettyPrint as PP
 import Text.PrettyPrint (Doc, (<>), (<+>))
 
 
+-- check if a char is in a string
+charInString :: Char -> String -> Bool
+charInString c "" = False
+charInString c (x:xs)
+    | c == x = True
+    | otherwise = charInString c xs
 
 type Environment = Map String (Int, LocalType)
 
 data Direction = Send | Receive
-               deriving (Eq, Ord, Read)
+               deriving (Show, Eq, Ord, Read)
 
-
-instance Show Direction where
-  show Send = "!"
-  show Receive = "?"
+data Seperator = Bar | BackAmpersand
+               deriving (Show, Eq, Ord, Read)
 
 data LocalType = Act Direction String LocalType     -- Send/Receive prefix
                | Rec String LocalType      -- Recursive def
                | Var String                -- Recursive call
                | End                       -- End
                | Choice Direction [LocalType]
+               | Prl LocalType Seperator LocalType
                deriving (Eq, Ord, Read)
-
-
-
--- instance Ord LocalType where
---   compare t1 t2 = compare (numberOfTransitions t1) (numberOfTransitions t2)
 
 instance Show LocalType where
   show = printLocalType
 
+isPrl :: LocalType -> Bool
+isPrl (Prl s sep ss) = True
+isPrl (Act dir s ss) = isPrl ss
+isPrl _ = False
 
 dual :: Direction -> Direction
 dual Send = Receive
 dual Receive = Send
-
-
-dualType :: LocalType -> LocalType
-dualType (Act dir s t) = (Act (dual dir) s (dualType t))
-dualType (Choice dir xs) = (Choice dir $ L.map dualType xs)
-dualType (Rec s t) = Rec s (dualType t)
-dualType (Var s) = (Var s)
-dualType End = End
-
 
 getPairs :: [LocalType] -> [(String, LocalType)]
 getPairs ((Act Send s lt):xs) = (string2send s, lt):(getPairs xs)
@@ -124,14 +119,6 @@ disjointPrefix list = let l = helper list in (length l) == (length $ nub l)
   where helper ((Act _ s _):xs) = s:(helper xs)
         helper _ = []
 
-isExtChoice :: [LocalType] -> Bool
-isExtChoice [] = False
-isExtChoice (x:xs) = isReceive x
-
-isIntChoice :: [LocalType] -> Bool
-isIntChoice [] = False
-isIntChoice (x:xs) = isSend x
-
 wellFormed :: LocalType -> Bool
 wellFormed = wellFormed_ []
   where wellFormed_ vars (Rec s lt) = (s `L.notElem` vars) && (wellFormed_ (s:vars) lt)
@@ -145,6 +132,7 @@ wellFormed = wellFormed_ []
         wellFormed_ vars (Choice Receive list) = (F.and $ L.map isReceive list)
                                             && (disjointPrefix list)
                                             && (F.and $ L.map (wellFormed_ vars) list)
+        wellFormed_ vars (Prl s sep ss) = (wellFormed s) && (wellFormed ss)
 
 
 typeDepth :: LocalType -> Int
@@ -264,11 +252,24 @@ substituteList var t (Rec s t') =
 substituteList var t (Choice dir xs) = Choice dir (L.map (substituteList var t) xs)
 substituteList var t (Act dir s t') = Act dir s (substituteList var t t')
 
+isExtChoice :: [LocalType] -> Bool
+isExtChoice [] = False
+isExtChoice (x:xs) = isReceive x
+
+isIntChoice :: [LocalType] -> Bool
+isIntChoice [] = False
+isIntChoice (x:xs) = isSend x
+
+
+isNotEmpty :: [LocalType] -> Bool
+isNotEmpty [] = False
+isNotEmpty (x:xs) = True 
+
 
 
 -- Lexer & Parser
 lexer :: T.TokenParser ()
-lexer = T.makeTokenParser  languageDef
+lexer = T.makeTokenParser languageDef
 
 languageDef =
   emptyDef { T.commentStart    = "/*"
@@ -277,7 +278,7 @@ languageDef =
            , T.identStart      = alphaNum
            , T.identLetter     = alphaNum
            , T.reservedNames   = []
-           , T.reservedOpNames = ["!", "?", "+", "&"]
+           , T.reservedOpNames = ["!", "?", "+", "&", "|", "$"]
            , T.caseSensitive = True
            }
 
@@ -287,8 +288,9 @@ symbol    = T.symbol lexer
 parens    = T.parens lexer
 identifier= T.identifier lexer
 
+
 ltparser :: Parser LocalType
-ltparser = do { symbol "!"
+ltparser =  do { symbol "!"
               ; act <-  identifier
               ; symbol ";"
               ; cont <- ltparser
@@ -308,30 +310,84 @@ ltparser = do { symbol "!"
               ; cont <- ltparser
               ; return $ Rec var cont
               }
-           <|>
-           do { symbol "end"
-              ; return  End
-              }
-           <|>
-           do { var <-  identifier
-              ; return $ Var var
-              }
-           <|> -- REDUNDANCY TO MAKE IT EASIER TO TYPE TYPES
-           do { symbol "{"
+            <|>
+            do { dir <- (symbol "+" <|> symbol "&")
+              ; choice <- choiceParser
+              ; return choice
+            }
+            <|>
+            do { symbol "{"
               ; list <- sepBy1 ltparser (char ',' <* spaces)
               ; symbol "}"
               ; return $ Choice (if (isExtChoice list) then Receive else Send) list
               }
            <|>
-           do { symbol "["
+            do { symbol "["
               ; list <- sepBy1 ltparser (char ',' <* spaces)
               ; symbol "]"
               ; return $ Choice (if (isIntChoice list) then Send else Receive) list
               }
+           <|> 
+            do { cont <- ltparser2
+              ; sep <- (symbol "|" <|> symbol "$")
+              ; cont2 <- ltparser2
+              ; return $ Prl cont (if (sep == "|")  then Bar else BackAmpersand) cont2
+           } 
+           <|>
+            do { symbol "end"
+              ; return  End
+              }
+           <|>
+            do { var <-  identifier
+              ; return $ Var var
+              }
+
+ltparser2 :: Parser LocalType
+ltparser2 =  do { symbol "!"
+              ; act <-  identifier
+              ; symbol ";"
+              ; cont <- ltparser2
+              ; return $ Act Send act cont
+              }
+           <|>
+           do { symbol "?"
+              ; act <-  identifier
+              ; symbol ";"
+              ; cont <- ltparser2
+              ; return $ Act Receive act cont
+              }
+           <|>
+           do { symbol "rec"
+              ; var <-  identifier
+              ; symbol "."
+              ; cont <- ltparser2
+              ; return $ Rec var cont
+              }
            <|>
            do { dir <- (symbol "+" <|> symbol "&")
-              ; choice <- choiceParser
+              ; choice <- choiceParser2
               ; return choice
+              }
+           <|>
+           do { symbol "end"
+              ; return  End
+              }
+           <|>
+           
+           do { var <-  identifier
+              ; return $ Var var
+              }
+           <|> -- REDUNDANCY TO MAKE IT EASIER TO TYPE TYPES
+           do { symbol "{"
+              ; list <- sepBy1 ltparser2 (char ',' <* spaces)
+              ; symbol "}"
+              ; return $ Choice (if (isExtChoice list) then Receive else Send) list
+              }
+           <|>
+           do { symbol "["
+              ; list <- sepBy1 ltparser2 (char ',' <* spaces)
+              ; symbol "]"
+              ; return $ Choice (if (isIntChoice list) then Send else Receive) list
               }
 
 choiceParser =
@@ -347,14 +403,32 @@ choiceParser =
      ; return $ Choice (if (isIntChoice list) then Send else Receive) list
      }
 
+
+choiceParser2 =
+  do { symbol "["
+     ; list <- sepBy1 ltparser2 (char ',' <* spaces)
+     ; symbol "]"
+     ; return $ Choice (if (isIntChoice list) then Send else Receive) list
+     }
+  <|>
+  do { symbol "{"
+     ; list <- sepBy1 ltparser2 (char ',' <* spaces)
+     ; symbol "}"
+     ; return $ Choice (if (isIntChoice list) then Send else Receive) list
+     }
+
+
 mainparser :: Parser LocalType
 mainparser =  whiteSpace >> ltparser <* eof
 
+mainparser2:: Parser LocalType
+mainparser2 =  whiteSpace >> ltparser2 <* eof
 
 
+-- if we work with a parallel session type, then use another parser
 parseLocalType :: String -> Either ParseError LocalType
-parseLocalType inp =  parse mainparser "" inp
-
+parseLocalType inp =  do 
+   (if (charInString '$' inp == True || charInString '|' inp == True) then (parse mainparser "" inp) else (parse mainparser2 "" inp))
 
 
 printDirection :: Direction -> String
@@ -381,6 +455,19 @@ printLocalType (Choice dir xs) = (if dir == Send
                           ++", "++(helper (y:xs))
         helper [x] = printLocalType x
         helper [] = []
+printLocalType (Prl s sep ss) = (printLocalType s)
+                                 ++
+                                 " "
+                                 ++ 
+                                 (if sep == Bar
+                                 then "|"
+                                 else "$")
+                                 ++
+                                 " "
+                                 ++
+                                 (printLocalType ss)
+
+
 
 localTypeToTree :: LocalType -> Tree String
 localTypeToTree (Act dir s lt) = Node ((printDirection dir)++ s) [localTypeToTree lt]
@@ -392,14 +479,3 @@ localTypeToTree (Choice dir xs) = Node ((printDirection dir)++" choice") (L.map 
 
 printTypeTree :: LocalType -> String
 printTypeTree f = drawTree $ localTypeToTree f
-
-
-
-reduce :: LocalType -> LocalType
-reduce t = helper Nothing t
-  where helper b (Rec s t) = case b of
-          Just x -> helper b (substitute s (Var x) t)
-          Nothing -> Rec s (helper (Just s) t)
-        helper b (Choice dir xs) = Choice dir (L.map (helper b ) xs)
-        helper b (Act dir s t) = Act dir s (helper Nothing t)
-        helper b t = t
