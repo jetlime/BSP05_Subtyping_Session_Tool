@@ -15,6 +15,7 @@ import Control.Monad
 import Data.Text (strip, pack, unpack)
 import Data.Time.Clock (UTCTime, getCurrentTime, diffUTCTime)
 import Text.Printf (printf)
+import System.Process
 
 -- DEBUG
 import System.IO.Unsafe
@@ -37,7 +38,6 @@ subargs = Subtyping
 getLocalTypeString :: String -> IO String
 getLocalTypeString s = readFile s
 
-
 main :: IO ()
 main = do
   pargs <- cmdArgs (modes [subargs])
@@ -49,7 +49,17 @@ main = do
           then putStrLn "Error in local type (not well-formed)."
           else
             do
-             let m1 = type2Machine False "-" ans
-             machine2file m1 "type"
-             putStrLn "Done"
+             if isPrl ans then do 
+              let m1 = type2Machine False "-" ans
+              let m2 = type2Machine2 False "-" ans 
+              machine2file m1 "type1" 
+              machine2file2 m2 m1 "type2"
+              -- merge the two created .dot files
+              -- type2_csfm.dot & type1_csfm.dot to type_csfm.dot
+              runCommand "gvpack -u -o tmp/type_cfsm.dot tmp/type1_cfsm.dot tmp/type2_cfsm.dot"
+              putStrLn "Done"
+             else do
+              let m1 = type2Machine False "-" ans
+              machine2file m1 "type" 
+              putStrLn "Done"
   return ()
