@@ -53,7 +53,12 @@ class Controller:
         if os.path.isfile(dotname + "." + self.fv.format): self.fv.show(path, imgname)
         else: self.__img_op(path, dotname, imgname.replace(" ", "_"), self.__save_img)
 
+    def save_simulation_txt(self, path, fname):
+        if os.path.isfile(fname + ".txt"): self.fv.showtxt(path, fname)
+        else: self.__save_txt(path, fname)
     def gen_sim_img(self, path, dotname, imgname): self.__img_op(path, dotname, imgname, self.fv.show)
+
+    def open_txt(self, path, fname): self.fv.showtxt(path, fname)
 
     def save_type_img(self, location, path, dotname, imgname, t): self.__single_type_op(location, path, dotname, imgname, t, self.__save_img)
 
@@ -90,7 +95,10 @@ class Controller:
         parsed_t, parsed_s = self.__check(t, s)
         if not parsed_t == "" and not parsed_s == "":
             out = self.__execute_command(algconfig, options, pics, steps)
-            if os.path.isfile(algconfig['simulation_file'] + ".dot" if not platform.system() == "Windows" else algconfig['simulation_file'].replace("/","\\") + ".dot") and pics: AlgSuccessEvent(algconfig)
+            if algconfig["alg_name"] == "Parrallel Subtyping" :
+                if os.path.isfile(algconfig['simulation_file'] + ".txt" if not platform.system() == "Windows" else algconfig['simulation_file'].replace("/","\\") + ".txt") and pics: AlgSuccessEvent(algconfig)
+            else :
+                if os.path.isfile(algconfig['simulation_file'] + ".dot" if not platform.system() == "Windows" else algconfig['simulation_file'].replace("/","\\") + ".dot") and pics: AlgSuccessEvent(algconfig)
             Log("Subtyping Results", wscale=0.06, hscale=0.01, message=out)
 
     def __multiple_execution(self, t, s):
@@ -143,6 +151,13 @@ class Controller:
             subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         except: os.remove(path + imgname + "." + self.fv.format)
 
+    def __save_txt(self, path, fname):
+        try:
+            f = fd.asksaveasfile(mode='w', initialfile=fname, defaultextension='txt')
+            if platform.system() == "Windows": command = "copy " + path + fname + ".txt" +  " " + f.name.replace("/", "\\") + " && del " + path + fname + ".txt" 
+            else: command = "mv " + path + fname + ".txt" + " " + f.name
+            subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        except: os.remove(path + fname + ".txt")
     def __check(self, t, s):
         t_parsed, t_error_message = self.__single_check(t, "(T)ype: ", "t_temp.txt") if t is not None else ("", "")
         s_parsed, s_error_message = self.__single_check(s, "(S)upertype: ", "s_temp.txt") if s is not None else ("", "")

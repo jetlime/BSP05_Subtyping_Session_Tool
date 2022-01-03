@@ -17,13 +17,17 @@ class FileViewer(Observer):
         command = "dot -T" + self.format + " " + path + dotname + ".dot > " + path + imgname + "." + self.format
         out = str(subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout)
         return out if len(out) > 3 else ""
-
     def show(self,  path, name):
         if platform.system() == "Windows": command = self.general_config[0]['win']
         elif platform.system() == "Darwin": command = self.general_config[0]['osx']
         else: command = self.general_config[0]['linux']
         command = command.replace("[file]", path + name + "." + self.format)
         subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-
+    def showtxt(self, path, name):
+        if platform.system() == "Windows": command = self.general_config[0]['win']
+        elif platform.system() == "Darwin": command = self.general_config[0]['osx']
+        else: command = self.general_config[0]['linux']
+        command = command.replace("[file]", path + name + ".txt")
+        subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     def __change_format_event(self, new_format): self.format = new_format
 

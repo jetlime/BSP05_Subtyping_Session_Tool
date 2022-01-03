@@ -122,16 +122,26 @@ class MenuView(Observer):
     def __save(self, controller):
         for algconfig in self.config:
             if self.lastalg == algconfig['alg_name']:
-                split = algconfig['simulation_file'].split("/")
-                controller.save_simulation_img(split[0] + ("\\" if platform.system() == "Windows" else "/"), split[1], self.lastalg + "_" + self.subname + "_" + self.supname)
-                return
+                if algconfig["alg_name"] == "Parrallel Subtyping":
+                    split = algconfig['simulation_file'].split("/")
+                    controller.save_simulation_txt(split[0] + ("\\" if platform.system() == "Windows" else "/"), split[1])
+                    return 
+                else:
+                    split = algconfig['simulation_file'].split("/")
+                    controller.save_simulation_img(split[0] + ("\\" if platform.system() == "Windows" else "/"), split[1], self.lastalg + "_" + self.subname + "_" + self.supname)
+                    return
 
     def __show(self, controller):
         for algconfig in self.config:
             if algconfig['alg_name'] == self.lastalg:
-                split = algconfig['simulation_file'].split("/")
-                controller.gen_sim_img(split[0] + ("\\" if platform.system() == "Windows" else "/"), split[1], split[1])
-                return
+                if algconfig["alg_name"] == "Parrallel Subtyping":
+                    split = algconfig['simulation_file'].split("/")
+                    controller.open_txt(split[0] + ("\\" if platform.system() == "Windows" else "/"), split[1])
+                    return 
+                else :
+                    split = algconfig['simulation_file'].split("/")
+                    controller.gen_sim_img(split[0] + ("\\" if platform.system() == "Windows" else "/"), split[1], split[1])
+                    return
 
     def __enable(self, algconfig):
         self.lastalg = algconfig['alg_name']
