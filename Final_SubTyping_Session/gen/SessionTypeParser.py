@@ -1,11 +1,17 @@
-# Generated from SessionType.g4 by ANTLR 4.5.3
+# Generated from SessionType.g4 by ANTLR 4.8
 # encoding: utf-8
 from antlr4 import *
 from io import StringIO
+import sys
+if sys.version_info[1] > 5:
+	from typing import TextIO
+else:
+	from typing.io import TextIO
+
 
 def serializedATN():
     with StringIO() as buf:
-        buf.write("\3\u0430\ud6d1\u8206\uad2d\u4417\uaef1\u8d80\uaadd\3\23")
+        buf.write("\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3\23")
         buf.write("\u016f\4\2\t\2\4\3\t\3\4\4\t\4\4\5\t\5\3\2\3\2\3\2\3\2")
         buf.write("\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\7")
         buf.write("\3\34\n\3\f\3\16\3\37\13\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3")
@@ -36,19 +42,19 @@ def serializedATN():
         buf.write("\16\5\u014d\13\5\3\5\3\5\3\5\3\5\3\5\3\5\3\5\3\5\3\5\3")
         buf.write("\5\3\5\3\5\3\5\3\5\3\5\3\5\3\5\3\5\3\5\3\5\3\5\3\5\7\5")
         buf.write("\u0165\n\5\f\5\16\5\u0168\13\5\3\5\3\5\3\5\5\5\u016d\n")
-        buf.write("\5\3\5\2\2\6\2\4\6\b\2\2\u0193\2\n\3\2\2\2\4\u008c\3\2")
-        buf.write("\2\2\6\u0102\3\2\2\2\b\u016c\3\2\2\2\n\13\5\4\3\2\13\f")
-        buf.write("\b\2\1\2\f\r\7\2\2\3\r\3\3\2\2\2\16\17\7\3\2\2\17\20\7")
-        buf.write("\4\2\2\20\21\b\3\1\2\21\22\7\20\2\2\22\23\7\b\2\2\23\24")
-        buf.write("\5\4\3\2\24\35\b\3\1\2\25\26\7\t\2\2\26\27\7\20\2\2\27")
-        buf.write("\30\7\b\2\2\30\31\5\4\3\2\31\32\b\3\1\2\32\34\3\2\2\2")
-        buf.write("\33\25\3\2\2\2\34\37\3\2\2\2\35\33\3\2\2\2\35\36\3\2\2")
-        buf.write("\2\36 \3\2\2\2\37\35\3\2\2\2 !\b\3\1\2!\"\7\5\2\2\"\u008d")
-        buf.write("\3\2\2\2#$\7\13\2\2$%\7\4\2\2%&\b\3\1\2&\'\7\20\2\2\'")
-        buf.write("(\7\b\2\2()\5\4\3\2)\62\b\3\1\2*+\7\t\2\2+,\7\20\2\2,")
-        buf.write("-\7\b\2\2-.\5\4\3\2./\b\3\1\2/\61\3\2\2\2\60*\3\2\2\2")
-        buf.write("\61\64\3\2\2\2\62\60\3\2\2\2\62\63\3\2\2\2\63\65\3\2\2")
-        buf.write("\2\64\62\3\2\2\2\65\66\b\3\1\2\66\67\7\5\2\2\67\u008d")
+        buf.write("\5\3\5\2\2\6\2\4\6\b\2\2\2\u0193\2\n\3\2\2\2\4\u008c\3")
+        buf.write("\2\2\2\6\u0102\3\2\2\2\b\u016c\3\2\2\2\n\13\5\4\3\2\13")
+        buf.write("\f\b\2\1\2\f\r\7\2\2\3\r\3\3\2\2\2\16\17\7\3\2\2\17\20")
+        buf.write("\7\4\2\2\20\21\b\3\1\2\21\22\7\20\2\2\22\23\7\b\2\2\23")
+        buf.write("\24\5\4\3\2\24\35\b\3\1\2\25\26\7\t\2\2\26\27\7\20\2\2")
+        buf.write("\27\30\7\b\2\2\30\31\5\4\3\2\31\32\b\3\1\2\32\34\3\2\2")
+        buf.write("\2\33\25\3\2\2\2\34\37\3\2\2\2\35\33\3\2\2\2\35\36\3\2")
+        buf.write("\2\2\36 \3\2\2\2\37\35\3\2\2\2 !\b\3\1\2!\"\7\5\2\2\"")
+        buf.write("\u008d\3\2\2\2#$\7\13\2\2$%\7\4\2\2%&\b\3\1\2&\'\7\20")
+        buf.write("\2\2\'(\7\b\2\2()\5\4\3\2)\62\b\3\1\2*+\7\t\2\2+,\7\20")
+        buf.write("\2\2,-\7\b\2\2-.\5\4\3\2./\b\3\1\2/\61\3\2\2\2\60*\3\2")
+        buf.write("\2\2\61\64\3\2\2\2\62\60\3\2\2\2\62\63\3\2\2\2\63\65\3")
+        buf.write("\2\2\2\64\62\3\2\2\2\65\66\b\3\1\2\66\67\7\5\2\2\67\u008d")
         buf.write("\3\2\2\289\7\f\2\29:\7\20\2\2:;\7\n\2\2;<\5\b\5\2<=\b")
         buf.write("\3\1\2=\u008d\3\2\2\2>?\7\20\2\2?\u008d\b\3\1\2@A\7\r")
         buf.write("\2\2A\u008d\b\3\1\2BC\7\16\2\2CD\7\20\2\2DE\7\b\2\2EF")
@@ -214,11 +220,12 @@ class SessionTypeParser ( Parser ):
     DUALPRL=16
     WHITESP=17
 
-    def __init__(self, input:TokenStream):
-        super().__init__(input)
-        self.checkVersion("4.5.3")
+    def __init__(self, input:TokenStream, output:TextIO = sys.stdout):
+        super().__init__(input, output)
+        self.checkVersion("4.8")
         self._interp = ParserATNSimulator(self, self.atn, self.decisionsToDFA, self.sharedContextCache)
         self._predicates = None
+
 
 
 
@@ -275,6 +282,7 @@ class SessionTypeParser ( Parser ):
         finally:
             self.exitRule()
         return localctx
+
 
     class StypeContext(ParserRuleContext):
 
@@ -407,7 +415,7 @@ class SessionTypeParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.state = 138
-            self._errHandler.sync(self);
+            self._errHandler.sync(self)
             la_ = self._interp.adaptivePredict(self._input,4,self._ctx)
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
@@ -529,7 +537,7 @@ class SessionTypeParser ( Parser ):
                 localctx.prl = self.match(SessionTypeParser.PRL)
                 self.state = 72
                 localctx.spt = self.sprimetype()
-                localctx.type = (None if localctx.e is None else localctx.e.text) + (None if localctx.prl is None else localctx.prl.text) + (None if localctx.spt is None else self._input.getText((localctx.spt.start,localctx.spt.stop))) + (localctx.spt.type if not localctx.spt.type == None else "") 
+                localctx.type = (None if localctx.e is None else localctx.e.text) + (None if localctx.prl is None else localctx.prl.text) + (None if localctx.spt is None else self._input.getText(localctx.spt.start,localctx.spt.stop)) + (localctx.spt.type if not localctx.spt.type == None else "") 
                 pass
 
             elif la_ == 8:
@@ -540,7 +548,7 @@ class SessionTypeParser ( Parser ):
                 localctx.prl = self.match(SessionTypeParser.PRL)
                 self.state = 77
                 localctx.spt = self.sprimetype()
-                localctx.type = (None if localctx.i is None else localctx.i.text) + (None if localctx.prl is None else localctx.prl.text) + (None if localctx.spt is None else self._input.getText((localctx.spt.start,localctx.spt.stop))) + (localctx.spt.type if not localctx.spt.type == None else "") 
+                localctx.type = (None if localctx.i is None else localctx.i.text) + (None if localctx.prl is None else localctx.prl.text) + (None if localctx.spt is None else self._input.getText(localctx.spt.start,localctx.spt.stop)) + (localctx.spt.type if not localctx.spt.type == None else "") 
                 pass
 
             elif la_ == 9:
@@ -551,7 +559,7 @@ class SessionTypeParser ( Parser ):
                 localctx.prl = self.match(SessionTypeParser.DUALPRL)
                 self.state = 82
                 localctx.spt = self.sprimetype()
-                localctx.type = (None if localctx.e is None else localctx.e.text) + (None if localctx.prl is None else localctx.prl.text) + (None if localctx.spt is None else self._input.getText((localctx.spt.start,localctx.spt.stop))) + (localctx.spt.type if not localctx.spt.type == None else "") 
+                localctx.type = (None if localctx.e is None else localctx.e.text) + (None if localctx.prl is None else localctx.prl.text) + (None if localctx.spt is None else self._input.getText(localctx.spt.start,localctx.spt.stop)) + (localctx.spt.type if not localctx.spt.type == None else "") 
                 pass
 
             elif la_ == 10:
@@ -562,7 +570,7 @@ class SessionTypeParser ( Parser ):
                 localctx.prl = self.match(SessionTypeParser.DUALPRL)
                 self.state = 87
                 localctx.spt = self.sprimetype()
-                localctx.type = (None if localctx.i is None else localctx.i.text) + (None if localctx.prl is None else localctx.prl.text) + (None if localctx.spt is None else self._input.getText((localctx.spt.start,localctx.spt.stop))) + (localctx.spt.type if not localctx.spt.type == None else "") 
+                localctx.type = (None if localctx.i is None else localctx.i.text) + (None if localctx.prl is None else localctx.prl.text) + (None if localctx.spt is None else self._input.getText(localctx.spt.start,localctx.spt.stop)) + (localctx.spt.type if not localctx.spt.type == None else "") 
                 pass
 
             elif la_ == 11:
@@ -660,6 +668,7 @@ class SessionTypeParser ( Parser ):
         finally:
             self.exitRule()
         return localctx
+
 
     class SprimetypeContext(ParserRuleContext):
 
@@ -785,7 +794,7 @@ class SessionTypeParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.state = 256
-            self._errHandler.sync(self);
+            self._errHandler.sync(self)
             la_ = self._interp.adaptivePredict(self._input,9,self._ctx)
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
@@ -907,7 +916,7 @@ class SessionTypeParser ( Parser ):
                 localctx.prl = self.match(SessionTypeParser.PRL)
                 self.state = 200
                 localctx.spt = self.sprimetype()
-                localctx.type = (None if localctx.e is None else localctx.e.text) + (None if localctx.prl is None else localctx.prl.text) + (None if localctx.spt is None else self._input.getText((localctx.spt.start,localctx.spt.stop))) + (localctx.spt.type if not localctx.spt.type == None else "") 
+                localctx.type = (None if localctx.e is None else localctx.e.text) + (None if localctx.prl is None else localctx.prl.text) + (None if localctx.spt is None else self._input.getText(localctx.spt.start,localctx.spt.stop)) + (localctx.spt.type if not localctx.spt.type == None else "") 
                 pass
 
             elif la_ == 8:
@@ -918,7 +927,7 @@ class SessionTypeParser ( Parser ):
                 localctx.prl = self.match(SessionTypeParser.PRL)
                 self.state = 205
                 localctx.spt = self.sprimetype()
-                localctx.type = (None if localctx.i is None else localctx.i.text) + (None if localctx.prl is None else localctx.prl.text) + (None if localctx.spt is None else self._input.getText((localctx.spt.start,localctx.spt.stop))) + (localctx.spt.type if not localctx.spt.type == None else "") 
+                localctx.type = (None if localctx.i is None else localctx.i.text) + (None if localctx.prl is None else localctx.prl.text) + (None if localctx.spt is None else self._input.getText(localctx.spt.start,localctx.spt.stop)) + (localctx.spt.type if not localctx.spt.type == None else "") 
                 pass
 
             elif la_ == 9:
@@ -1016,6 +1025,7 @@ class SessionTypeParser ( Parser ):
         finally:
             self.exitRule()
         return localctx
+
 
     class GuardedContext(ParserRuleContext):
 
@@ -1136,7 +1146,7 @@ class SessionTypeParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.state = 362
-            self._errHandler.sync(self);
+            self._errHandler.sync(self)
             la_ = self._interp.adaptivePredict(self._input,14,self._ctx)
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)

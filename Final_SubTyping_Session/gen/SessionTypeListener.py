@@ -1,4 +1,4 @@
-# Generated from SessionType.g4 by ANTLR 4.5.3
+# Generated from SessionType.g4 by ANTLR 4.8
 from antlr4 import *
 if __name__ is not None and "." in __name__:
     from .SessionTypeParser import SessionTypeParser
@@ -44,3 +44,5 @@ class SessionTypeListener(ParseTreeListener):
         pass
 
 
+
+del SessionTypeParser
