@@ -70,6 +70,8 @@ class Controller:
         else: op(path, imgname)
 
     def __create_dot_type_img(self, location, t):
+        # The problem is located here, parallel types do not get parsed
+        # error in self.__check
         if location == Location.SUBTYPE:
             parsed, _ = self.__check(t, None)
             fname = "t_temp.txt"
@@ -103,7 +105,6 @@ class Controller:
         command = command.replace("[t1]", ("tmp\\" if platform.system() == "Windows" else "tmp/") + "t_temp.txt").replace("[t2]", ("tmp\\" if platform.system() == "Windows" else "tmp/") + "s_temp.txt")
         if platform.system() == "Windows": 
             command = algconfig['win'] + command 
-            print(command)
         else: command = algconfig['osx' if platform.system() == "Darwin" else 'linux'] + command
         out = str(subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout)
         return self.__string_cleaner(out)
@@ -168,6 +169,7 @@ class Controller:
         return location + self.__string_cleaner(out) + "\n" if len(self.__string_cleaner(out)) > 1 else ""
 
     def __parse(self, t):
+        # On arrive jusqu'ici
         lexer = SessionTypeLexer(InputStream(t))
         lexer_error_listener = LexerErrorListener()
         lexer._listeners = [lexer_error_listener]
@@ -176,6 +178,7 @@ class Controller:
         parser_error_listener = ParserErrorListener()
         parser._listeners = [parser_error_listener]
         tree = parser.start()
+        # the error must lie above
         # Zero lexical and parser errors, the problem must lie in the tree.type
         if( '|' in tree.type or '$' in tree.type):
             tree.type = t

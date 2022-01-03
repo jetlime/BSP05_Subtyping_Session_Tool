@@ -1,3 +1,5 @@
 .stack-work/
+test/
+tmp/
 *~
 oldversion.hs
