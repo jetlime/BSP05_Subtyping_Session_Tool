@@ -146,8 +146,6 @@ class Controller:
     def __check(self, t, s):
         t_parsed, t_error_message = self.__single_check(t, "(T)ype: ", "t_temp.txt") if t is not None else ("", "")
         s_parsed, s_error_message = self.__single_check(s, "(S)upertype: ", "s_temp.txt") if s is not None else ("", "")
-        print(t_parsed)
-        print(t_error_message)
         if not t_error_message == "" or not s_error_message == "":
             Log(title="Error Log", wscale=0.08, hscale=0.015, message=(t_error_message if not t_error_message == "" else "") + ("\n\n" if not t_error_message  == "" and not s_error_message == "" else "") + (s_error_message if not s_error_message == "" else ""))
             return "", ""

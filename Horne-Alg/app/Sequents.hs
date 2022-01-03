@@ -214,11 +214,3 @@ sequentsAlg subtype supertype mode = do
     let result = printResult subtype supertype algResult
     writeToFile file ("Final Result: " ++ result)
     printResultIO subtype supertype algResult
-    let sequent = ans
-    let res3 = timesRule sequent
-    print(MultiSet.toList res3)
-    let debuglist = MultiSet.fromList [(Choice Send [(Act Send "a" End), (Act Send "a" End)]),(Act Receive "a" End)]
-    -- +{!a;end,!b;end} < !a;end
-    -- +{!a;end,!b;end},?a;end
-    let res4 = algorithmRun debuglist
-    printResultIO (Choice Send [(Act Send "a" End), (Act Send "a" End)]) (Act Send "a" End) res4
