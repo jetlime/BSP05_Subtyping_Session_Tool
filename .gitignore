@@ -3,5 +3,3 @@ test/
 tmp/
 *~
 oldversion.hs
-app/*.hi
-app/*.o
