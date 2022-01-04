@@ -149,7 +149,7 @@ asynchronousBlock sequent = do
 
 synchronousBlock :: (MultiSet LocalType) -> Bool
 synchronousBlock sequent = do
-    if (checkParApply sequent)== False then parRule sequent else do 
+    if (checkParApply sequent)== False then do parRule sequent else do 
         if (checkMeetApply sequent)==False then meetRule sequent else do 
             prefixRule sequent
 
@@ -179,8 +179,8 @@ getDual (Act Send s lt) = (Act Receive s (getDual lt))
 getDual (Act Receive s lt) = (Act Send s (getDual lt))
 getDual (Prl lt Bar tl) = (Prl (getDual lt) BackAmpersand (getDual tl))
 getDual (Prl lt BackAmpersand tl) = (Prl (getDual lt) Bar (getDual tl))
-getDual (Choice Send lt) = (Choice Receive lt)
-getDual (Choice Receive lt) = (Choice Send lt)
+getDual (Choice Send lt) = (Choice Receive (map getDual lt))
+getDual (Choice Receive lt) = (Choice Send (map getDual lt))
 getDual lt = lt
 
 dualize :: LocalType -> LocalType -> Bool -> (MultiSet LocalType)
