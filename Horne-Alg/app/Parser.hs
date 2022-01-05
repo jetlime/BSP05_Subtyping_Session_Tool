@@ -306,6 +306,12 @@ ltparser =  do { symbol "!"
               ; cont <- ltparser
               ; return $ Rec var cont
               }
+            <|> 
+            do { cont <- ltparser2
+              ; sep <- (symbol "|" <|> symbol "$")
+              ; cont2 <- ltparser2
+              ; return $ Prl cont (if (sep == "|")  then Bar else BackAmpersand) cont2
+            } 
             <|>
             do { dir <- (symbol "+" <|> symbol "&")
               ; choice <- choiceParser
@@ -323,12 +329,6 @@ ltparser =  do { symbol "!"
               ; symbol "]"
               ; return $ Choice (if (isIntChoice list) then Send else Receive) list
               }
-           <|> 
-            do { cont <- ltparser2
-              ; sep <- (symbol "|" <|> symbol "$")
-              ; cont2 <- ltparser2
-              ; return $ Prl cont (if (sep == "|")  then Bar else BackAmpersand) cont2
-           } 
            <|>
             do { symbol "end"
               ; return  End

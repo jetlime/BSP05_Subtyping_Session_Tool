@@ -23,6 +23,22 @@ okRule sequent = do
     -- writeToFile file ("OK rule does not apply:" ++ show(MultiSet.toList sequent))
     if filteredSequent == sequent then do True  else False
 
+-- A list of different trees (only one tree needs to have a holding relation)
+-- each tree has a list of branches (called Multisets or sequents), the okrule must
+-- hold for every branch. The branches in this list are the uppest-most in the tree itself. 
+
+-- Naively, we find a tree which has branches that are all holding
+-- if a tree does not have all branches holding, we move on to the next one
+-- if none respect the condiction, the subtyping relation does not hold
+checkOk :: [[(MultiSet LocalType)]] -> Bool
+checkOk (x:xs) = if checkAllOk x then True else checkOk xs
+checkOk [] = False
+
+-- Naively checking if all branches hold
+checkAllOk :: [(MultiSet LocalType)] -> Bool
+checkAllOk (x:xs) = if okRule x then checkAllOk xs else False
+checkAllOk [] = True
+
 checkPar :: LocalType-> These LocalType LocalType
 checkPar (Prl lt BackAmpersand ss) = These lt ss
 checkPar lt = This lt
@@ -31,12 +47,13 @@ checkPar2 :: LocalType-> These LocalType LocalType
 checkPar2 (Prl lt BackAmpersand ss) = These lt ss
 checkPar2 lt = That lt
 
-parRule :: (MultiSet LocalType) -> Bool
+parRule :: (MultiSet LocalType) -> [[(MultiSet LocalType)]]
 parRule sequent = do 
     let leftSet = mapThese checkPar sequent
     let rightSet = mapThese checkPar2 sequent
-    if (prefixRule (fst leftSet)) && (prefixRule (snd leftSet)) then True else 
-        if (prefixRule (fst rightSet)) && (prefixRule (snd rightSet)) then True else False
+    -- fst and snd of the tuple leftSet form two branches in one tree
+    -- fst and snd of the tuple rightSet form two branches in the second tree
+    [[(fst leftSet),(snd leftSet)],[(fst rightSet),(snd rightSet)]]
 
 checkJoin :: LocalType -> LocalType
 checkJoin (Choice Send listlt) = (head listlt)
@@ -141,17 +158,29 @@ prefixRule sequent = do
     let result = MultiSet.union second (fst xs)
     if result == sequent then okRule result else prefixRule result
 
-asynchronousBlock :: (MultiSet LocalType) -> [(MultiSet LocalType)]
+asynchronousBlock :: (MultiSet LocalType) -> [[(MultiSet LocalType)]]
 asynchronousBlock sequent = do 
     let timedSequent = timesRule sequent
     let joinedSequent = joinRule timedSequent
-    if joinedSequent == [] then [timedSequent] else joinedSequent
+    if joinedSequent == [] then [[timedSequent]] else [joinedSequent]
 
-synchronousBlock :: (MultiSet LocalType) -> Bool
-synchronousBlock sequent = do
-    if (checkParApply sequent)== False then do parRule sequent else do 
-        if (checkMeetApply sequent)==False then meetRule sequent else do 
-            prefixRule sequent
+
+synchronousBlock :: [(MultiSet LocalType)] -> [[(MultiSet LocalType)]]
+synchronousBlock branches = do 
+    -- for every branch we either obtain one branch (the same or modified) or a list of branches
+    -- the new ones are added to the existing tree
+    -- new trees could be created, we append them to the global list we return
+    let trees = L.concatMap (\x -> parRule x) branches
+    trees
+
+synchronousBlockTree :: [[(MultiSet LocalType)]] -> [[(MultiSet LocalType)]]
+synchronousBlockTree trees = do 
+    let alltrees = L.concatMap (\x -> synchronousBlock x) trees 
+    alltrees
+
+--if (checkParApply sequent)== False then do parRule sequent else do 
+--if (checkMeetApply sequent)==False then meetRule sequent else do 
+--  prefixRule sequent
 
 algorithmRun :: (MultiSet LocalType) -> Bool
 algorithmRun sequent = do 
@@ -164,7 +193,13 @@ algorithmRun sequent = do
         let result = asynchronousBlock sequent
         -- all asynchronous rule were applied, the synchronous one's will now be applied.
         -- check if every branch holds with the prefix rule
-        all synchronousBlock result
+        let alltrees = synchronousBlockTree result
+        -- let alltrees = synchronousBlock result
+        -- once we obtained the list of all trees all having a list of branches
+        -- we check if at least one tree has every branch that holds
+        -- otherwise the subtyping relation does not hold.
+        -- alltrees of type [[(MultiSet Localtype)]]
+        checkOk alltrees            
 
 printResultIO :: LocalType -> LocalType -> Bool -> IO()
 printResultIO subtype supertype True = putStrLn("Subtyping between '" ++ show subtype ++ "' and  '" ++ show supertype ++ "' holds.")
