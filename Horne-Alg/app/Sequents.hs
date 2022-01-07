@@ -40,20 +40,29 @@ checkAllOk (x:xs) = if okRule x then checkAllOk xs else False
 checkAllOk [] = True
 
 checkPar :: LocalType-> These LocalType LocalType
+--checkPar (Act dir s ss) = (Act dir s (checkPar ss))
 checkPar (Prl lt BackAmpersand ss) = These lt ss
 checkPar lt = This lt
+
 
 checkPar2 :: LocalType-> These LocalType LocalType
 checkPar2 (Prl lt BackAmpersand ss) = These lt ss
 checkPar2 lt = That lt
 
-parRule :: (MultiSet LocalType) -> [[(MultiSet LocalType)]]
-parRule sequent = do 
-    let leftSet = mapThese checkPar sequent
-    let rightSet = mapThese checkPar2 sequent
-    -- fst and snd of the tuple leftSet form two branches in one tree
-    -- fst and snd of the tuple rightSet form two branches in the second tree
-    [[(fst leftSet),(snd leftSet)],[(fst rightSet),(snd rightSet)]]
+parRule :: [(MultiSet LocalType)] -> ([(MultiSet LocalType)],[(MultiSet LocalType)])
+parRule (branch:branches) = do  
+    if isParSequent branch then do
+        let leftSet = mapThese checkPar branch
+        let rightSet = mapThese checkPar2 branch
+        -- fst and snd of the tuple leftSet form two branches in one tree
+        -- fst and snd of the tuple rightSet form two branches in the second tree
+        ([(fst leftSet),(snd leftSet)] ++ (fst (parRule branches)),[(fst rightSet),(snd rightSet)] ++ (snd (parRule branches)))
+    else ([branch] ++ (fst (parRule branches)),[branch] ++ (snd (parRule branches)))
+parRule [] = ([],[])
+
+applyParRule :: [[(MultiSet LocalType)]] -> [[(MultiSet LocalType)]]
+applyParRule (tree:trees) = if (fst (parRule tree) == snd(parRule tree)) then [fst(parRule tree)] ++ applyParRule trees else [fst(parRule tree)] ++ [snd (parRule tree)] ++ applyParRule trees
+applyParRule [] = []
 
 checkJoin :: LocalType -> LocalType
 checkJoin (Choice Send listlt) = (head listlt)
@@ -150,14 +159,17 @@ checkPrefix  sequent (Act dir s lt) = do
             Left (Act dir s lt)
 checkPrefix xs lt = Left lt
 
-prefixRule :: (MultiSet LocalType) ->  Bool
-prefixRule sequent = do 
+prefixRule :: [(MultiSet LocalType)] -> [(MultiSet LocalType)]
+prefixRule (branch:branches) = do 
     -- create a Multiset of types that can be removed (representing a list of choices)
     let xs = MultiSet.mapEither (checkPrefix sequent) (sequent)
     let second = MultiSet.map removeDualAct (snd xs)
     let result = MultiSet.union second (fst xs)
     if result == sequent then okRule result else prefixRule result
 
+prefixRuleTree :: [[(MultiSet LocalType)]] -> [[(MultiSet LocalType)]]
+prefixRuleTree (tree:trees) = prefixRule tree ++ prefixRuleTree trees
+prefixRuleTree [] = []
 
 -- Asynchronous Rules do not create a new tree
 asynchronousBlock :: (MultiSet LocalType) -> [[(MultiSet LocalType)]]
@@ -166,23 +178,13 @@ asynchronousBlock sequent = do
     let joinedSequent = joinRule timedSequent
     if joinedSequent == [] then [[timedSequent]] else [joinedSequent]
 
-
-synchronousBlock :: [(MultiSet LocalType)] -> [[(MultiSet LocalType)]]
-synchronousBlock branches = do 
-    -- for every branch we either obtain one branch (the same or modified) or a list of branches
-    -- the new ones are added to the existing tree
-    -- new trees could be created, we append them to the global list we return
-    let trees = L.concatMap (\x -> parRule x) branches
-    trees
-
+-- for every branch we either obtain one branch (the same or modified) or a list of branches
+-- the new ones are added to the existing tree
+-- new trees could be created, we append them to the global list we return
 synchronousBlockTree :: [[(MultiSet LocalType)]] -> [[(MultiSet LocalType)]]
 synchronousBlockTree trees = do 
-    let alltrees = L.concatMap (\x -> synchronousBlock x) trees 
-    alltrees
-
---if (checkParApply sequent)== False then do parRule sequent else do 
---if (checkMeetApply sequent)==False then meetRule sequent else do 
---  prefixRule sequent
+    let trees2 = applyParRule trees
+    prefixRuleTree trees2
 
 algorithmRun :: LocalType -> LocalType -> (MultiSet LocalType) -> IO()
 algorithmRun subtype supertype sequent = do 
@@ -197,12 +199,12 @@ algorithmRun subtype supertype sequent = do
         -- A list of Multiset's, the list has one element if the JOIN rule was not applied
         -- Otherwise one element in the list corresponds to one branch, all elements in one list 
         -- must hold for the subtyping relation to hold
-        let result = asynchronousBlock sequent
+        let result = (asynchronousBlock sequent)
         writeToFile file ("Asynchronous rules got applied: " ++ printTrees result 1)
         -- all asynchronous rule were applied, the synchronous one's will now be applied.
         -- check if every branch holds with the prefix rule
         let alltrees = synchronousBlockTree result
-        writeToFile file ("Synchronous rules got applied: " ++ printTrees result 1 )
+        writeToFile file ("Synchronous rules got applied: " ++ printTrees alltrees 1 )
         -- let alltrees = synchronousBlock result
         -- once we obtained the list of all trees all having a list of branches
         -- we check if at least one tree has every branch that holds
@@ -223,12 +225,12 @@ printResult subtype supertype True = "Subtyping between '" ++ show subtype ++ "'
 printResult subtype supertype False = "Subtyping between " ++ show subtype ++ " and  " ++ show supertype ++ " does not hold."
 
 printTrees :: [[(MultiSet LocalType)]] -> Int -> String
-printTrees (x:xs) index = "Tree #"++ show(index) ++ " " ++ printTree x ++ (printTrees xs (index+1))
+printTrees (x:xs) index = "Tree #"++ show(index) ++ ": " ++ (printTree x 1)++ (printTrees xs (index+1))
 printTrees [] index = ""
 
-printTree :: [(MultiSet LocalType)] -> String
-printTree (y:ys) = show (MultiSet.toList y) ++ printTree ys
-printTree [] = ""
+printTree :: [(MultiSet LocalType)] -> Int -> String
+printTree (y:ys) index = " Branch " ++ show(index) ++ ": "++ show (MultiSet.toList y) ++ (printTree ys (index+1))
+printTree [] index = ""
 
 getDual :: LocalType -> LocalType
 getDual (Act Send s lt) = (Act Receive s (getDual lt))

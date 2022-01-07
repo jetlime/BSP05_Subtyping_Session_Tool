@@ -33,9 +33,13 @@ isPar (Prl s BackAmpersand ss) = True
 isPar (Act dir s ss) = isPar ss
 isPar _ = False
 
+isParSequent :: (MultiSet LocalType) -> Bool
+isParSequent s = if null (MultiSet.filter isPar s) then False else True
+
 isChoiceReceive :: LocalType -> Bool
 isChoiceReceive (Choice Receive _) = True
 isChoiceReceive _ = False
+
 isActSend :: String -> LocalType -> Bool
 isActSend s (Act Send x _) = if s==x then True else False
 isActSend _ _ = False
