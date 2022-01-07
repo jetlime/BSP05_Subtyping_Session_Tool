@@ -158,6 +158,8 @@ prefixRule sequent = do
     let result = MultiSet.union second (fst xs)
     if result == sequent then okRule result else prefixRule result
 
+
+-- Asynchronous Rules do not create a new tree
 asynchronousBlock :: (MultiSet LocalType) -> [[(MultiSet LocalType)]]
 asynchronousBlock sequent = do 
     let timedSequent = timesRule sequent
@@ -182,24 +184,35 @@ synchronousBlockTree trees = do
 --if (checkMeetApply sequent)==False then meetRule sequent else do 
 --  prefixRule sequent
 
-algorithmRun :: (MultiSet LocalType) -> Bool
-algorithmRun sequent = do 
+algorithmRun :: LocalType -> LocalType -> (MultiSet LocalType) -> IO()
+algorithmRun subtype supertype sequent = do 
+    let file = "tmp/log.txt"
     -- Apply the Asynchronous set of rule (TIME and JOIN) 
     -- till no more can be applied
-    if okRule sequent then True else do 
+    if okRule sequent then do 
+        let result = printResult subtype supertype True
+        writeToFile file ("Final Result: " ++ result)
+        printResultIO subtype supertype True    
+    else do 
         -- A list of Multiset's, the list has one element if the JOIN rule was not applied
         -- Otherwise one element in the list corresponds to one branch, all elements in one list 
         -- must hold for the subtyping relation to hold
         let result = asynchronousBlock sequent
+        writeToFile file ("Asynchronous rules got applied: " ++ printTrees result 1)
         -- all asynchronous rule were applied, the synchronous one's will now be applied.
         -- check if every branch holds with the prefix rule
         let alltrees = synchronousBlockTree result
+        writeToFile file ("Synchronous rules got applied: " ++ printTrees result 1 )
         -- let alltrees = synchronousBlock result
         -- once we obtained the list of all trees all having a list of branches
         -- we check if at least one tree has every branch that holds
         -- otherwise the subtyping relation does not hold.
         -- alltrees of type [[(MultiSet Localtype)]]
-        checkOk alltrees            
+        let algresult = checkOk alltrees     
+        -- End Of Algorithm
+        let result = printResult subtype supertype algresult
+        writeToFile file ("Final Result: " ++ result)
+        printResultIO subtype supertype algresult       
 
 printResultIO :: LocalType -> LocalType -> Bool -> IO()
 printResultIO subtype supertype True = putStrLn("Subtyping between '" ++ show subtype ++ "' and  '" ++ show supertype ++ "' holds.")
@@ -208,6 +221,14 @@ printResultIO subtype supertype False = putStrLn("Subtyping between " ++ show su
 printResult :: LocalType -> LocalType -> Bool -> String
 printResult subtype supertype True = "Subtyping between '" ++ show subtype ++ "' and  '" ++ show supertype ++ "' holds."
 printResult subtype supertype False = "Subtyping between " ++ show subtype ++ " and  " ++ show supertype ++ " does not hold."
+
+printTrees :: [[(MultiSet LocalType)]] -> Int -> String
+printTrees (x:xs) index = "Tree #"++ show(index) ++ printTree x ++ (printTrees xs (index+1))
+printTrees [] index = ""
+
+printTree :: [(MultiSet LocalType)] -> String
+printTree (y:ys) = show (MultiSet.toList y) ++ printTree ys
+printTree [] = ""
 
 getDual :: LocalType -> LocalType
 getDual (Act Send s lt) = (Act Receive s (getDual lt))
@@ -244,8 +265,4 @@ sequentsAlg subtype supertype mode = do
     -- we dualized one of the types.
     -- and put the two types in a Multiset called sequent
     -- start of alg. 
-    let algResult = algorithmRun ans
-    -- End Of Algorithm
-    let result = printResult subtype supertype algResult
-    writeToFile file ("Final Result: " ++ result)
-    printResultIO subtype supertype algResult
+    algorithmRun subtype supertype ans
