@@ -223,7 +223,7 @@ printResult subtype supertype True = "Subtyping between '" ++ show subtype ++ "'
 printResult subtype supertype False = "Subtyping between " ++ show subtype ++ " and  " ++ show supertype ++ " does not hold."
 
 printTrees :: [[(MultiSet LocalType)]] -> Int -> String
-printTrees (x:xs) index = "Tree #"++ show(index) ++ printTree x ++ (printTrees xs (index+1))
+printTrees (x:xs) index = "Tree #"++ show(index) ++ " " ++ printTree x ++ (printTrees xs (index+1))
 printTrees [] index = ""
 
 printTree :: [(MultiSet LocalType)] -> String
