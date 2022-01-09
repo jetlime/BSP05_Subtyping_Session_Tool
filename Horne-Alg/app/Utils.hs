@@ -14,6 +14,13 @@ isChoice :: LocalType -> Bool
 isChoice (Choice Send _) = True
 isChoice _ = False
 
+isMeet :: (MultiSet LocalType) -> Bool
+isMeet sequent = if (MultiSet.null (MultiSet.filter isDualChoice sequent)) == False then True else False
+
+isDualChoice :: LocalType -> Bool
+isDualChoice (Choice Receive _) = True
+isDualChoice _ = False
+
 -- check if of type End
 isEnd :: LocalType -> Bool
 isEnd End = True
