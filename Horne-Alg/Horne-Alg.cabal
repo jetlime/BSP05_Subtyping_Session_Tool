@@ -46,7 +46,10 @@ library
 executable Horne-Alg-exe
   main-is: Main.hs
   other-modules:
+      MeetRule
+      ParRule
       Parser
+      PrefixRule
       Sequents
       Utils
       Paths_Horne_Alg

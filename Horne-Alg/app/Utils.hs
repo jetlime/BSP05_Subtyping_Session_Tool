@@ -14,6 +14,13 @@ isChoice :: LocalType -> Bool
 isChoice (Choice Send _) = True
 isChoice _ = False
 
+isMeet :: (MultiSet LocalType) -> Bool
+isMeet sequent = if (MultiSet.null (MultiSet.filter isDualChoice sequent)) == False then True else False
+
+isDualChoice :: LocalType -> Bool
+isDualChoice (Choice Receive _) = True
+isDualChoice _ = False
+
 -- check if of type End
 isEnd :: LocalType -> Bool
 isEnd End = True
@@ -33,9 +40,13 @@ isPar (Prl s BackAmpersand ss) = True
 isPar (Act dir s ss) = isPar ss
 isPar _ = False
 
+isParSequent :: (MultiSet LocalType) -> Bool
+isParSequent s = if null (MultiSet.filter isPar s) then False else True
+
 isChoiceReceive :: LocalType -> Bool
 isChoiceReceive (Choice Receive _) = True
 isChoiceReceive _ = False
+
 isActSend :: String -> LocalType -> Bool
 isActSend s (Act Send x _) = if s==x then True else False
 isActSend _ _ = False
@@ -53,6 +64,10 @@ writeToFile file content = do
     x <- SIO.readFile file
     writeFile file (content++"\n")
     appendFile file x
+
+notEmpty :: [(MultiSet LocalType)] -> Bool
+notEmpty [] = False
+notEmpty l = True
 
 -- | /O(n)/. Map and separate the 'This' and 'That' or 'These' results 
 -- modified function of mapEither to map both cases in case f return These

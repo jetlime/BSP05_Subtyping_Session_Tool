@@ -6,14 +6,16 @@ import Data.Typeable
 import qualified Data.Map as M
 import Data.Map (Map)
 import Data.List as L
+import Data.List (elemIndex)
+import Data.These
+-- https://hackage.haskell.org/package/multiset-0.3.4.3/docs/Data-MultiSet.html#g:1
 import Data.MultiSet (MultiSet)
 import qualified Data.MultiSet as MultiSet
 import qualified System.IO.Strict as SIO
-import ParRule
-import MeetRule
-import PrefixRule
-
------------OKRULE-----------
+-- okRule using recursion and Data.Multiset
+-- O(n)
+-- if the rule holds, return True
+-- if the rule does not hold, check if we can apply the TIMES rule if so then call the TIMES RULE
 okRule :: (MultiSet LocalType) -> Bool
 okRule sequent = do 
     let file = "tmp/log.txt"
@@ -29,16 +31,39 @@ okRule sequent = do
 -- if a tree does not have all branches holding, we move on to the next one
 -- if none respect the condiction, the subtyping relation does not hold
 checkOk :: [[(MultiSet LocalType)]] -> Bool
-checkOk (x:xs) = if L.null x then checkOk xs else (if checkAllOk x then True else checkOk xs)
+checkOk (x:xs) = if checkAllOk x then True else checkOk xs
 checkOk [] = False
 
 -- Naively checking if all branches hold
 checkAllOk :: [(MultiSet LocalType)] -> Bool
 checkAllOk (x:xs) = if okRule x then checkAllOk xs else False
 checkAllOk [] = True
------------OKRULE-----------
 
------------JOINRULE -----------
+checkPar :: LocalType-> These LocalType LocalType
+--checkPar (Act dir s ss) = (Act dir s (checkPar ss))
+checkPar (Prl lt BackAmpersand ss) = These lt ss
+checkPar lt = This lt
+
+
+checkPar2 :: LocalType-> These LocalType LocalType
+checkPar2 (Prl lt BackAmpersand ss) = These lt ss
+checkPar2 lt = That lt
+
+parRule :: [(MultiSet LocalType)] -> ([(MultiSet LocalType)],[(MultiSet LocalType)])
+parRule (branch:branches) = do  
+    if isParSequent branch then do
+        let leftSet = mapThese checkPar branch
+        let rightSet = mapThese checkPar2 branch
+        -- fst and snd of the tuple leftSet form two branches in one tree
+        -- fst and snd of the tuple rightSet form two branches in the second tree
+        ([(fst leftSet),(snd leftSet)] ++ (fst (parRule branches)),[(fst rightSet),(snd rightSet)] ++ (snd (parRule branches)))
+    else ([branch] ++ (fst (parRule branches)),[branch] ++ (snd (parRule branches)))
+parRule [] = ([],[])
+
+applyParRule :: [[(MultiSet LocalType)]] -> [[(MultiSet LocalType)]]
+applyParRule (tree:trees) = if (fst (parRule tree) == snd(parRule tree)) then [fst(parRule tree)] ++ applyParRule trees else [fst(parRule tree)] ++ [snd (parRule tree)] ++ applyParRule trees
+applyParRule [] = []
+
 checkJoin :: LocalType -> LocalType
 checkJoin (Choice Send listlt) = (head listlt)
 checkJoin lt = lt
@@ -52,9 +77,49 @@ joinRule sequent = do
     let leftSet = MultiSet.map checkJoin sequent
     let rightSet = MultiSet.map checkJoin2 sequent
     if sequent == rightSet then [] else [leftSet, rightSet] ++ joinRule leftSet ++ joinRule rightSet
------------JOINRULE-----------
+    -- if (prefixRule leftSet && prefixRule rightSet) then True else False
 
------------TIMESRULE-----------
+checkMeet :: LocalType -> LocalType
+checkMeet (Choice Receive listlt) = (head listlt)
+checkMeet lt = lt 
+
+checkMeet2 :: LocalType -> LocalType
+checkMeet2 (Choice Receive listlt) = (last listlt)
+checkMeet2 lt = lt
+
+meetRule :: (MultiSet LocalType) -> Bool
+meetRule sequent = do
+    let leftSet = MultiSet.map checkMeet sequent
+    let rightSet = MultiSet.map checkMeet2 sequent
+    if (prefixRule leftSet) then do True else prefixRule rightSet
+
+prefixRuleApply :: (MultiSet LocalType) -> Bool
+prefixRuleApply sequent = do 
+    let xs = MultiSet.mapEither (checkPrefix sequent) (sequent)
+    let second = fst xs
+    if (MultiSet.null second) then (True) else False
+
+-- check if TIME's rule can be applied
+checkTimesApply :: (MultiSet LocalType) -> Bool
+checkTimesApply xs = do 
+    let newxs = MultiSet.filter isPrl xs
+    null newxs
+
+checkJoinApply :: (MultiSet LocalType) -> Bool
+checkJoinApply xs = do 
+    let newxs = MultiSet.filter isChoice xs
+    null newxs
+
+checkMeetApply :: (MultiSet LocalType) -> Bool
+checkMeetApply xs = do 
+    let newxs = MultiSet.filter isChoiceReceive  xs
+    null newxs
+
+checkParApply :: (MultiSet LocalType) -> Bool
+checkParApply xs = do 
+    let newxs = MultiSet.filter isPar xs
+    null newxs
+
 checkTimes :: LocalType -> LocalType
 checkTimes (Prl s Bar ss) = s
 checkTimes (Act dir s ss) = (Act dir s (checkTimes ss))
@@ -69,7 +134,42 @@ timesRule :: (MultiSet LocalType) -> (MultiSet LocalType)
 timesRule sequent = do 
     let result = MultiSet.concatMap (\x -> if isPrl x then [checkTimes x, checkTimes2 x] else [x] ) sequent
     if result == sequent then sequent else timesRule result
------------TIMESRULES-----------
+
+findNext :: (MultiSet LocalType) -> LocalType -> Either LocalType LocalType
+findNext sequent (Act Send s ss) = do 
+    -- list of all dual types in the sequent
+    let result = MultiSet.filter (isActReceive s) sequent
+    -- if the list is empty then the prefix rule is not applied on this LocalType
+    if (MultiSet.null result) then Left (Act Send s ss) else Right (Act Send s ss)
+findNext sequent (Act Receive s ss) = do 
+    -- list of all dual types in the sequent
+    let result = MultiSet.filter (isActSend s) sequent 
+    if (MultiSet.null result) then Left (Act Receive s ss) else Right (Act Receive s ss)
+
+
+-- according to the
+checkPrefix :: (MultiSet LocalType) -> LocalType -> Either LocalType LocalType
+checkPrefix  sequent (Act dir s lt) = do 
+    case findNext sequent (Act dir s lt) of
+        -- if another dual action exists
+        Right ans -> do 
+            Right (Act dir s lt)
+        -- if no dual action exists
+        Left ans -> do 
+            Left (Act dir s lt)
+checkPrefix xs lt = Left lt
+
+prefixRule :: [(MultiSet LocalType)] -> [(MultiSet LocalType)]
+prefixRule (branch:branches) = do 
+    -- create a Multiset of types that can be removed (representing a list of choices)
+    let xs = MultiSet.mapEither (checkPrefix sequent) (sequent)
+    let second = MultiSet.map removeDualAct (snd xs)
+    let result = MultiSet.union second (fst xs)
+    if result == sequent then okRule result else prefixRule result
+
+prefixRuleTree :: [[(MultiSet LocalType)]] -> [[(MultiSet LocalType)]]
+prefixRuleTree (tree:trees) = prefixRule tree ++ prefixRuleTree trees
+prefixRuleTree [] = []
 
 -- Asynchronous Rules do not create a new tree
 asynchronousBlock :: (MultiSet LocalType) -> [[(MultiSet LocalType)]]
@@ -84,14 +184,8 @@ asynchronousBlock sequent = do
 synchronousBlockTree :: [[(MultiSet LocalType)]] -> [[(MultiSet LocalType)]]
 synchronousBlockTree trees = do 
     let trees2 = applyParRule trees
-    let trees3 = applyMeetRule trees2
-    let trees4 = applyRule trees3 trees3
-    if trees4 == L.filter notEmpty trees4 then trees4 else synchronousBlockTree (helper trees4)
-    where helper (tree:trees) = helper2 tree ++ helper trees
-          helper [] = []
-          helper2 (branch:branches) = asynchronousBlock branch ++ helper2 branches
-          helper2 [] = []
-    
+    prefixRuleTree trees2
+
 algorithmRun :: LocalType -> LocalType -> (MultiSet LocalType) -> IO()
 algorithmRun subtype supertype sequent = do 
     let file = "tmp/log.txt"
@@ -131,7 +225,7 @@ printResult subtype supertype True = "Subtyping between '" ++ show subtype ++ "'
 printResult subtype supertype False = "Subtyping between " ++ show subtype ++ " and  " ++ show supertype ++ " does not hold."
 
 printTrees :: [[(MultiSet LocalType)]] -> Int -> String
-printTrees (x:xs) index = if x/=[] then " Tree #"++ show(index) ++ ": " ++ (printTree x 1)++ (printTrees xs (index+1)) else printTrees xs (index)
+printTrees (x:xs) index = "Tree #"++ show(index) ++ ": " ++ (printTree x 1)++ (printTrees xs (index+1))
 printTrees [] index = ""
 
 printTree :: [(MultiSet LocalType)] -> Int -> String
