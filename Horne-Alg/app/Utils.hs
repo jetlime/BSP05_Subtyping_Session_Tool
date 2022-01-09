@@ -65,6 +65,10 @@ writeToFile file content = do
     writeFile file (content++"\n")
     appendFile file x
 
+notEmpty :: [(MultiSet LocalType)] -> Bool
+notEmpty [] = False
+notEmpty l = True
+
 -- | /O(n)/. Map and separate the 'This' and 'That' or 'These' results 
 -- modified function of mapEither to map both cases in case f return These
 -- code of mapEither found in source code, 
