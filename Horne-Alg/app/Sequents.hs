@@ -85,12 +85,14 @@ synchronousBlockTree :: [[(MultiSet LocalType)]] -> [[(MultiSet LocalType)]]
 synchronousBlockTree trees = do 
     let trees2 = applyParRule trees
     let trees3 = applyMeetRule trees2
-    let trees4 = applyRule trees3 trees3
-    if trees4 == L.filter notEmpty trees4 then trees4 else synchronousBlockTree (helper trees4)
+    let trees4 = applyPrefixRuleCont trees3 trees3
+    if trees4 == (L.filter notEmpty trees4) then trees4 else synchronousBlockTree (helper trees4)
     where helper (tree:trees) = helper2 tree ++ helper trees
           helper [] = []
           helper2 (branch:branches) = asynchronousBlock branch ++ helper2 branches
           helper2 [] = []
+
+    
     
 algorithmRun :: LocalType -> LocalType -> (MultiSet LocalType) -> IO()
 algorithmRun subtype supertype sequent = do 
@@ -121,22 +123,6 @@ algorithmRun subtype supertype sequent = do
         let result = printResult subtype supertype algresult
         writeToFile file ("Final Result: " ++ result)
         printResultIO subtype supertype algresult       
-
-printResultIO :: LocalType -> LocalType -> Bool -> IO()
-printResultIO subtype supertype True = putStrLn("Subtyping between '" ++ show subtype ++ "' and  '" ++ show supertype ++ "' holds.")
-printResultIO subtype supertype False = putStrLn("Subtyping between " ++ show subtype ++ " and  " ++ show supertype ++ " does not hold.")
-
-printResult :: LocalType -> LocalType -> Bool -> String
-printResult subtype supertype True = "Subtyping between '" ++ show subtype ++ "' and  '" ++ show supertype ++ "' holds."
-printResult subtype supertype False = "Subtyping between " ++ show subtype ++ " and  " ++ show supertype ++ " does not hold."
-
-printTrees :: [[(MultiSet LocalType)]] -> Int -> String
-printTrees (x:xs) index = if x/=[] then " Tree #"++ show(index) ++ ": " ++ (printTree x 1)++ (printTrees xs (index+1)) else printTrees xs (index)
-printTrees [] index = ""
-
-printTree :: [(MultiSet LocalType)] -> Int -> String
-printTree (y:ys) index = " Branch " ++ show(index) ++ ": "++ show (MultiSet.toList y) ++ (printTree ys (index+1))
-printTree [] index = ""
 
 getDual :: LocalType -> LocalType
 getDual (Act Send s lt) = (Act Receive s (getDual lt))

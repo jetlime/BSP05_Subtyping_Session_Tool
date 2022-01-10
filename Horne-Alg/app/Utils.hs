@@ -4,7 +4,6 @@ import Parser
 import qualified Data.Map as M
 import Data.Map (Map)    
 import qualified System.IO.Strict as SIO
--- https://hackage.haskell.org/package/multiset-0.3.4.3/docs/Data-MultiSet.html#g:1
 import Data.MultiSet (MultiSet)
 import qualified Data.MultiSet as MultiSet
 import Data.These
@@ -79,3 +78,22 @@ mapThese f = (\(ls,rs) -> (MultiSet.fromOccurList ls, MultiSet.fromOccurList rs)
            This  l -> let (ls,rs) = mapThese' xs in ((l,n):ls, rs)
            That r -> let (ls,rs) = mapThese' xs in (ls, (r,n):rs)
            These u i -> let (ls,rs) = mapThese' xs in ((u,n):ls, (i,n):rs)
+
+
+-----------------PRINTING-----------------
+printResultIO :: LocalType -> LocalType -> Bool -> IO()
+printResultIO subtype supertype True = putStrLn("Subtyping between '" ++ show subtype ++ "' and  '" ++ show supertype ++ "' holds.")
+printResultIO subtype supertype False = putStrLn("Subtyping between " ++ show subtype ++ " and  " ++ show supertype ++ " does not hold.")
+
+printResult :: LocalType -> LocalType -> Bool -> String
+printResult subtype supertype True = "Subtyping between '" ++ show subtype ++ "' and  '" ++ show supertype ++ "' holds."
+printResult subtype supertype False = "Subtyping between " ++ show subtype ++ " and  " ++ show supertype ++ " does not hold."
+
+printTrees :: [[(MultiSet LocalType)]] -> Int -> String
+printTrees (x:xs) index = if x/=[] then " Tree #"++ show(index) ++ ": " ++ (printTree x 1)++ (printTrees xs (index+1)) else printTrees xs (index)
+printTrees [] index = ""
+
+printTree :: [(MultiSet LocalType)] -> Int -> String
+printTree (y:ys) index = if MultiSet.null y then printTree ys index else  " Branch " ++ show(index) ++ ": "++ show (MultiSet.toList y) ++ (printTree ys (index+1))
+printTree [] index = ""
+-----------------PRINTING-----------------
