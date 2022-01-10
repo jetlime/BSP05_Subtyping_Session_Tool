@@ -91,6 +91,7 @@ synchronousBlockTree trees = do
           helper [] = []
           helper2 (branch:branches) = asynchronousBlock branch ++ helper2 branches
           helper2 [] = []
+
     
     
 algorithmRun :: LocalType -> LocalType -> (MultiSet LocalType) -> IO()
@@ -122,22 +123,6 @@ algorithmRun subtype supertype sequent = do
         let result = printResult subtype supertype algresult
         writeToFile file ("Final Result: " ++ result)
         printResultIO subtype supertype algresult       
-
-printResultIO :: LocalType -> LocalType -> Bool -> IO()
-printResultIO subtype supertype True = putStrLn("Subtyping between '" ++ show subtype ++ "' and  '" ++ show supertype ++ "' holds.")
-printResultIO subtype supertype False = putStrLn("Subtyping between " ++ show subtype ++ " and  " ++ show supertype ++ " does not hold.")
-
-printResult :: LocalType -> LocalType -> Bool -> String
-printResult subtype supertype True = "Subtyping between '" ++ show subtype ++ "' and  '" ++ show supertype ++ "' holds."
-printResult subtype supertype False = "Subtyping between " ++ show subtype ++ " and  " ++ show supertype ++ " does not hold."
-
-printTrees :: [[(MultiSet LocalType)]] -> Int -> String
-printTrees (x:xs) index = if x/=[] then " Tree #"++ show(index) ++ ": " ++ (printTree x 1)++ (printTrees xs (index+1)) else printTrees xs (index)
-printTrees [] index = ""
-
-printTree :: [(MultiSet LocalType)] -> Int -> String
-printTree (y:ys) index = " Branch " ++ show(index) ++ ": "++ show (MultiSet.toList y) ++ (printTree ys (index+1))
-printTree [] index = ""
 
 getDual :: LocalType -> LocalType
 getDual (Act Send s lt) = (Act Receive s (getDual lt))

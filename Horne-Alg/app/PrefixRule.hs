@@ -46,7 +46,7 @@ prefixRuleBranches [] = ([],[[]])
 
 prefixRuleTrees :: [[(MultiSet LocalType)]] -> [[(MultiSet LocalType)]]
 -- check if none or only one prefix was removed
-prefixRuleTrees (tree:trees) = if [(fst (prefixRuleBranches tree))]== (snd (prefixRuleBranches tree)) then [(fst (prefixRuleBranches tree))] ++ prefixRuleTrees trees else [(fst (prefixRuleBranches tree))] ++ (snd (prefixRuleBranches tree)) ++ prefixRuleTrees trees
+prefixRuleTrees (tree:trees) = if [(fst (prefixRuleBranches tree))] == (snd (prefixRuleBranches tree)) then [(fst (prefixRuleBranches tree))] ++ prefixRuleTrees trees else [(fst (prefixRuleBranches tree))] ++ (snd (prefixRuleBranches tree)) ++ prefixRuleTrees trees
 prefixRuleTrees [] = [[]]
 
 applyPrefixRuleCont :: [[(MultiSet LocalType)]] -> [[(MultiSet LocalType)]] -> [[(MultiSet LocalType)]]
