@@ -85,7 +85,7 @@ synchronousBlockTree :: [[(MultiSet LocalType)]] -> [[(MultiSet LocalType)]]
 synchronousBlockTree trees = do 
     let trees2 = applyParRule trees
     let trees3 = applyMeetRule trees2
-    let trees4 = applyRule trees3 trees3
+    let trees4 = applyPrefixRuleCont trees3 trees3
     if trees4 == (L.filter notEmpty trees4) then trees4 else synchronousBlockTree (helper trees4)
     where helper (tree:trees) = helper2 tree ++ helper trees
           helper [] = []
