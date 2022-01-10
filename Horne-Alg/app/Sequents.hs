@@ -86,11 +86,12 @@ synchronousBlockTree trees = do
     let trees2 = applyParRule trees
     let trees3 = applyMeetRule trees2
     let trees4 = applyRule trees3 trees3
-    if trees4 == L.filter notEmpty trees4 then trees4 else synchronousBlockTree (helper trees4)
+    if trees4 == (L.filter notEmpty trees4) then trees4 else synchronousBlockTree (helper trees4)
     where helper (tree:trees) = helper2 tree ++ helper trees
           helper [] = []
           helper2 (branch:branches) = asynchronousBlock branch ++ helper2 branches
           helper2 [] = []
+    
     
 algorithmRun :: LocalType -> LocalType -> (MultiSet LocalType) -> IO()
 algorithmRun subtype supertype sequent = do 

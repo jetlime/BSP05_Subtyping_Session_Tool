@@ -5,47 +5,41 @@ import Utils
 import Data.MultiSet (MultiSet)
 import qualified Data.MultiSet as MultiSet
 import Data.List as L
+import Debug.Trace
 
-findPrefixWithDual :: (MultiSet LocalType) -> [LocalType] -> [LocalType]
-findPrefixWithDual sequent (stype:types) = if L.null (findPrefix sequent stype) then findPrefixWithDual sequent types else findPrefix sequent stype
-findPrefixWithDual sequent [] = []
+findPrefixWithDual :: (MultiSet LocalType) -> [LocalType] -> (LocalType,[LocalType])
+findPrefixWithDual sequent (stype:types) = if L.null (findPrefix sequent stype) then (fst (findPrefixWithDual sequent types) ,snd (findPrefixWithDual sequent types)) else (stype,findPrefix sequent stype)
+findPrefixWithDual sequent [] = (End,[])
     
 findPrefix :: (MultiSet LocalType) -> LocalType -> [LocalType]
 findPrefix sequent (Act Send s ss) = MultiSet.toList (MultiSet.filter (isActReceive s) sequent)
 findPrefix sequent (Act Receive s ss) = MultiSet.toList (MultiSet.filter (isActSend s) sequent)
 findPrefix sequent _ = []
 
-isDual :: LocalType -> LocalType -> Bool
-isDual (Act Send s ss) (Act Receive x xx) = if s==x then True else False
-isDual (Act Receive s ss) (Act Send x xx) = if s==x then True else False
-isDual _ _ = False
+removeDual2 :: LocalType -> (MultiSet LocalType) -> LocalType -> (MultiSet LocalType)
+removeDual2 stype sequent dualAction = do 
+    let s = MultiSet.delete dualAction sequent
+    let ss = MultiSet.insert (removeDualAct dualAction) s
+    let sss = MultiSet.delete stype ss
+    MultiSet.insert (removeDualAct stype) sss
 
-checkPrefix :: LocalType -> LocalType -> Either LocalType LocalType
-checkPrefix action dualAction = if (isDual dualAction action || action == dualAction) then Right action else Left action
+removeDual :: LocalType -> [LocalType] -> (MultiSet LocalType) -> [(MultiSet LocalType)]
+removeDual stype (action:actions) sequent = [(removeDual2 stype sequent action)] ++ (removeDual stype actions sequent)
+removeDual _ [] _= []
 
-removeDual2 :: (MultiSet LocalType) -> LocalType -> (MultiSet LocalType)
-removeDual2 sequent dualAction = do 
-    let xs = MultiSet.mapEither (\x -> checkPrefix x dualAction) sequent
-    let second = MultiSet.map removeDualAct (snd xs)
-    MultiSet.union second (fst xs)
-
-removeDual :: [LocalType] -> (MultiSet LocalType) -> [(MultiSet LocalType)]
-removeDual (action:actions) sequent = [(removeDual2 sequent action)] ++ (removeDual actions sequent)
-removeDual [] _ = []
-
-checkPrefix2 :: (MultiSet LocalType) -> ((MultiSet LocalType),[[(MultiSet LocalType)]])
-checkPrefix2 sequent = do 
+checkPrefix :: (MultiSet LocalType) -> ((MultiSet LocalType),[[(MultiSet LocalType)]])
+checkPrefix sequent = do 
     if MultiSet.null (MultiSet.filter isAct sequent) then do 
         (sequent, [[sequent]])
     else do 
-        -- list of choices (dual actions that can be removed)
+        -- dualActions is a tuple, (type to be removed , list of choices (dual actions that can be removed))
         let dualActions = findPrefixWithDual sequent (MultiSet.toList sequent)
-        let branches = removeDual dualActions sequent
-        if L.null dualActions then (sequent, [[sequent]]) else (head branches, [L.tail branches])
+        let branches = removeDual (fst dualActions) (snd dualActions) sequent
+        if L.null (snd dualActions) then (sequent, [[sequent]]) else (head branches, [L.tail branches])
 
 -- return a tuple, (Modified branches of the current tree, new trees created)
 prefixRule :: [(MultiSet LocalType)] -> ([(MultiSet LocalType)], [[(MultiSet LocalType)]])
-prefixRule (branch:branches) = ([fst (checkPrefix2 branch)] ++ fst (prefixRule branches), (snd (checkPrefix2 branch)) ++ (snd (prefixRule branches)))
+prefixRule (branch:branches) = ([fst (checkPrefix branch)] ++ fst (prefixRule branches), (snd (checkPrefix branch)) ++ (snd (prefixRule branches)))
 prefixRule [] = ([],[[]])
 
 applyPrefixRule :: [[(MultiSet LocalType)]] -> [[(MultiSet LocalType)]]
@@ -55,6 +49,6 @@ applyPrefixRule [] = [[]]
 
 applyRule :: [[(MultiSet LocalType)]] -> [[(MultiSet LocalType)]] -> [[(MultiSet LocalType)]]
 applyRule (tree:trees) everything = if helper tree then applyRule (applyPrefixRule everything) (applyPrefixRule everything) else applyRule trees everything
-    where helper (branch:branches) = if L.null (findPrefixWithDual branch (MultiSet.toList branch)) then helper branches else True
+    where helper (branch:branches) = if (fst (findPrefixWithDual branch (MultiSet.toList branch))== End) then helper branches else True
           helper [] = False
 applyRule [] everything = everything
