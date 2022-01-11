@@ -3,6 +3,9 @@
 The technical deliverable is based on the session subtyping tool built by Lorenzo Bacchiani in the python programming language using executable Haskell programs. The tool is publicly available on github, ([repository link](https://github.com/LBacchiani/session-subtyping-tool)).
  His tool allows to apply different subtyping algorithms that will simulate subtyping in order to check subtyping of two session types. We will design and build into this tool a new asynchronous session subtyping algorithm proven by my tutor Ross James Horne. By extending it, the tool will support parallel session types, which act as internal communications.
 
+## Download 
+The latest version can be downloaded in the ([releases section](https://github.com/jetlime/Subtyping_Session_Tool_SourceCode/releases)) of this repository. Once downloaded you can follow the **Run the Sodtware** section if you have a windows machine. Otherwise, you can compile the suited executables by following the **Source Code Usage** section.
+
 ## Folders
 All exectuables and source code needed for the entire software,
 

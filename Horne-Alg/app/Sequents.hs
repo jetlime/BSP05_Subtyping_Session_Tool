@@ -130,16 +130,6 @@ algorithmRun subtype supertype sequent = do
         let result = printResult subtype supertype algresult
         writeToFile file ("Final Result: " ++ result)
         printResultIO subtype supertype algresult   
-        -- DEBUG
-        let test = [[MultiSet.fromList [(Act Send "a" End), End], MultiSet.fromList [(Act Receive "a" End)] ],[MultiSet.fromList [(Act Send  "a" End), (Act Receive "a" End )], MultiSet.fromList [End]]]    
-        let branch1 = [MultiSet.fromList [(Act Send "a" End), End], MultiSet.fromList [(Act Receive "a" End)] ]
-        let branch2 = [MultiSet.fromList [(Act Send  "a" End), (Act Receive "a" End )], MultiSet.fromList [End]]
-        --putStrLn (printTrees test 1)
-        --let treeed =  (applyPrefixRuleCont test test)
-        --putStrLn (printTrees treeed 1)
-        --putStrLn(show (prefixRuleBranches branch2))
-        putStrLn ( show (L.filter notEmpty alltrees))
-        putStrLn ( show (alltrees))
 
 getDual :: LocalType -> LocalType
 getDual (Act Send s lt) = (Act Receive s (getDual lt))
