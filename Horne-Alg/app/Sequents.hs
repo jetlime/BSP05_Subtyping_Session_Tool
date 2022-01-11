@@ -74,27 +74,32 @@ timesRule sequent = do
 -----------TIMESRULES-----------
 
 -- Asynchronous Rules do not create a new tree
-asynchronousBlock :: (MultiSet LocalType) -> [[(MultiSet LocalType)]]
+asynchronousBlock :: (MultiSet LocalType) -> [(MultiSet LocalType)]
 asynchronousBlock sequent = do 
     let timedSequent = timesRule sequent
     let joinedSequent = joinRule timedSequent
-    if joinedSequent == [] then [[timedSequent]] else [joinedSequent]
+    if joinedSequent == [] then [timedSequent] else joinedSequent
 
 -- for every branch we either obtain one branch (the same or modified) or a list of branches
 -- the new ones are added to the existing tree
 -- new trees could be created, we append them to the global list we return
 synchronousBlockTree :: [[(MultiSet LocalType)]] -> [[(MultiSet LocalType)]]
 synchronousBlockTree trees = do 
+    -- apply the PAR rule
     let trees2 = applyParRule trees
+    -- apply the MEET rule
     let trees3 = applyMeetRule trees2
+    -- apply the PREFIX rule
     let trees4 = applyPrefixRuleCont trees3 trees3
-    if trees4 == (L.filter notEmpty trees4) then trees4 else synchronousBlockTree (helper trees4)
-    where helper (tree:trees) = helper2 tree ++ helper trees
+    -- filter out the empty branches
+    let cleaneduptrees = L.filter notEmpty trees4
+    -- if rules can be applied once more
+    if trees == cleaneduptrees then cleaneduptrees else synchronousBlockTree (helper cleaneduptrees)
+    where helper (tree:trees) = [helper2 tree] ++ helper trees
           helper [] = []
+          -- apply the asynchronous rules on every branch before applying the synchronous onces
           helper2 (branch:branches) = asynchronousBlock branch ++ helper2 branches
-          helper2 [] = []
-
-    
+          helper2 [] = []  
     
 algorithmRun :: LocalType -> LocalType -> (MultiSet LocalType) -> IO()
 algorithmRun subtype supertype sequent = do 
@@ -109,7 +114,7 @@ algorithmRun subtype supertype sequent = do
         -- A list of Multiset's, the list has one element if the JOIN rule was not applied
         -- Otherwise one element in the list corresponds to one branch, all elements in one list 
         -- must hold for the subtyping relation to hold
-        let result = (asynchronousBlock sequent)
+        let result = [(asynchronousBlock sequent)]
         writeToFile file ("Asynchronous rules got applied: " ++ printTrees result 1)
         -- all asynchronous rule were applied, the synchronous one's will now be applied.
         -- check if every branch holds with the prefix rule
@@ -124,7 +129,17 @@ algorithmRun subtype supertype sequent = do
         -- End Of Algorithm
         let result = printResult subtype supertype algresult
         writeToFile file ("Final Result: " ++ result)
-        printResultIO subtype supertype algresult       
+        printResultIO subtype supertype algresult   
+        -- DEBUG
+        let test = [[MultiSet.fromList [(Act Send "a" End), End], MultiSet.fromList [(Act Receive "a" End)] ],[MultiSet.fromList [(Act Send  "a" End), (Act Receive "a" End )], MultiSet.fromList [End]]]    
+        let branch1 = [MultiSet.fromList [(Act Send "a" End), End], MultiSet.fromList [(Act Receive "a" End)] ]
+        let branch2 = [MultiSet.fromList [(Act Send  "a" End), (Act Receive "a" End )], MultiSet.fromList [End]]
+        --putStrLn (printTrees test 1)
+        --let treeed =  (applyPrefixRuleCont test test)
+        --putStrLn (printTrees treeed 1)
+        --putStrLn(show (prefixRuleBranches branch2))
+        putStrLn ( show (L.filter notEmpty alltrees))
+        putStrLn ( show (alltrees))
 
 getDual :: LocalType -> LocalType
 getDual (Act Send s lt) = (Act Receive s (getDual lt))
