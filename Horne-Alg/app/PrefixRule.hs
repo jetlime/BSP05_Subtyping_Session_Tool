@@ -2,10 +2,10 @@ module PrefixRule where
 
 import Parser
 import Utils
+
 import Data.MultiSet (MultiSet)
 import qualified Data.MultiSet as MultiSet
 import Data.List as L
-import Debug.Trace
 
 findPrefix :: (MultiSet LocalType) -> [LocalType] -> (LocalType,[LocalType])
 findPrefix sequent (stype:types) = if L.null (findPrefixHelper sequent stype) then (fst (findPrefix sequent types) ,snd (findPrefix sequent types)) else (stype,findPrefixHelper sequent stype)

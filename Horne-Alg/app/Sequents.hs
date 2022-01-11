@@ -2,6 +2,10 @@ module Sequents where
 
 import Parser
 import Utils
+import ParRule
+import MeetRule
+import PrefixRule
+
 import Data.Typeable
 import qualified Data.Map as M
 import Data.Map (Map)
@@ -9,9 +13,7 @@ import Data.List as L
 import Data.MultiSet (MultiSet)
 import qualified Data.MultiSet as MultiSet
 import qualified System.IO.Strict as SIO
-import ParRule
-import MeetRule
-import PrefixRule
+
 
 -----------OKRULE-----------
 okRule :: (MultiSet LocalType) -> Bool

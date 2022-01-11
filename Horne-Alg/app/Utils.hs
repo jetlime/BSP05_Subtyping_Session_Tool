@@ -1,6 +1,7 @@
 module Utils where 
 
 import Parser
+
 import qualified Data.Map as M
 import Data.Map (Map)    
 import qualified System.IO.Strict as SIO
