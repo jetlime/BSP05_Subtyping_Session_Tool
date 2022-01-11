@@ -32,6 +32,9 @@ subargs = Subtyping
  {t = def  &= argPos 0  &= typ "FILE/LOCALTYPE"}  &= help "Type visualiser"
 
 
+isPar :: LocalType -> Bool
+isPar (Prl s BackAmpersand ss) = True
+isPar _ = False
 
 getLocalTypeString :: String -> IO String
 getLocalTypeString s = readFile s
@@ -48,5 +51,7 @@ main = do
           then putStrLn "The type is not well-formed (all recursion variables must be bound and nested recursion operators must use different variable names)"
           else
             do
-            putStrLn ""
+            --putStrLn ""
+            -- DEBUG
+            if isPar ans then putStrLn (printLocalType ans) else putStrLn "False"
   return ()
