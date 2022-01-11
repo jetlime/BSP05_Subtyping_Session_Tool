@@ -2,10 +2,10 @@ module PrefixRule where
 
 import Parser
 import Utils
+
 import Data.MultiSet (MultiSet)
 import qualified Data.MultiSet as MultiSet
 import Data.List as L
-import Debug.Trace
 
 findPrefix :: (MultiSet LocalType) -> [LocalType] -> (LocalType,[LocalType])
 findPrefix sequent (stype:types) = if L.null (findPrefixHelper sequent stype) then (fst (findPrefix sequent types) ,snd (findPrefix sequent types)) else (stype,findPrefixHelper sequent stype)
@@ -41,16 +41,16 @@ applyPrefixRule sequent = do
 
 -- return a tuple, (Modified branches of the current tree, new trees created)
 prefixRuleBranches :: [(MultiSet LocalType)] -> ([(MultiSet LocalType)], [[(MultiSet LocalType)]])
-prefixRuleBranches (branch:branches) = ([fst (applyPrefixRule branch)] ++ fst (prefixRuleBranches branches), (snd (applyPrefixRule branch)) ++ (snd (prefixRuleBranches branches)))
+prefixRuleBranches (branch:branches) = ([fst (applyPrefixRule branch)] ++ fst (prefixRuleBranches branches), (L.tail (snd (applyPrefixRule branch))) ++ (snd (prefixRuleBranches branches)))
 prefixRuleBranches [] = ([],[[]])
 
 prefixRuleTrees :: [[(MultiSet LocalType)]] -> [[(MultiSet LocalType)]]
--- check if none or only one prefix was removed
-prefixRuleTrees (tree:trees) = if [(fst (prefixRuleBranches tree))] == (snd (prefixRuleBranches tree)) then [(fst (prefixRuleBranches tree))] ++ prefixRuleTrees trees else [(fst (prefixRuleBranches tree))] ++ (snd (prefixRuleBranches tree)) ++ prefixRuleTrees trees
+-- check if none or only one prefix was removed 
+prefixRuleTrees (tree:trees) = if [(fst (prefixRuleBranches tree))] == (L.filter notEmpty (snd (prefixRuleBranches tree))) then [(fst (prefixRuleBranches tree))] ++ prefixRuleTrees trees else [(fst (prefixRuleBranches tree))] ++ (snd (prefixRuleBranches tree)) ++ prefixRuleTrees trees
 prefixRuleTrees [] = [[]]
 
 applyPrefixRuleCont :: [[(MultiSet LocalType)]] -> [[(MultiSet LocalType)]] -> [[(MultiSet LocalType)]]
 applyPrefixRuleCont (tree:trees) everything = if helper tree then applyPrefixRuleCont (prefixRuleTrees everything) (prefixRuleTrees everything) else applyPrefixRuleCont trees everything
-    where helper (branch:branches) = if (fst (findPrefix branch (MultiSet.toList branch))== End) then helper branches else True
+    where helper (branch:branches) = if (L.null (snd (findPrefix branch (MultiSet.toList branch)))) then helper branches else True
           helper [] = False
 applyPrefixRuleCont [] everything = everything

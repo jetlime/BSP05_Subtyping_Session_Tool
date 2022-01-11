@@ -1,10 +1,10 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 
+import Parser 
+import Sequents
 
 import Lib
 import System.Console.CmdArgs
-import Parser 
-import Sequents
 import Data.Time.Clock.POSIX
 
 main :: IO ()

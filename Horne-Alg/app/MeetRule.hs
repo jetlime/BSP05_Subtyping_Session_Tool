@@ -2,6 +2,7 @@ module MeetRule where
 
 import Parser
 import Utils
+
 import Data.MultiSet (MultiSet)
 import qualified Data.MultiSet as MultiSet
 
