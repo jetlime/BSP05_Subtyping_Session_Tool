@@ -94,12 +94,14 @@ synchronousBlockTree trees = do
     -- filter out the empty branches
     let cleaneduptrees = L.filter notEmpty trees4
     -- if rules can be applied once more
+    
     if trees == cleaneduptrees then cleaneduptrees else synchronousBlockTree (helper cleaneduptrees)
     where helper (tree:trees) = [helper2 tree] ++ helper trees
           helper [] = []
           -- apply the asynchronous rules on every branch before applying the synchronous onces
           helper2 (branch:branches) = asynchronousBlock branch ++ helper2 branches
           helper2 [] = []  
+    
     
 algorithmRun :: LocalType -> LocalType -> (MultiSet LocalType) -> IO()
 algorithmRun subtype supertype sequent = do 
@@ -120,7 +122,6 @@ algorithmRun subtype supertype sequent = do
         -- check if every branch holds with the prefix rule
         let alltrees = synchronousBlockTree result
         writeToFile file ("Synchronous rules got applied: " ++ printTrees alltrees 1 )
-        -- let alltrees = synchronousBlock result
         -- once we obtained the list of all trees all having a list of branches
         -- we check if at least one tree has every branch that holds
         -- otherwise the subtyping relation does not hold.
@@ -130,7 +131,10 @@ algorithmRun subtype supertype sequent = do
         let result = printResult subtype supertype algresult
         writeToFile file ("Final Result: " ++ result)
         printResultIO subtype supertype algresult   
-
+        -- DEBUG 
+        let test = applyParRule [[MultiSet.fromList [subtype, getDual supertype]]]
+        putStrLn (printTrees test 1)
+        
 getDual :: LocalType -> LocalType
 getDual (Act Send s lt) = (Act Receive s (getDual lt))
 getDual (Act Receive s lt) = (Act Send s (getDual lt))

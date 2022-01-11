@@ -29,24 +29,20 @@ removeDualHelper stype sequent dualAction = do
     let sss = MultiSet.delete stype ss
     MultiSet.insert (removeDualAct stype) sss
 
-applyPrefixRule :: (MultiSet LocalType) -> ((MultiSet LocalType),[[(MultiSet LocalType)]])
-applyPrefixRule sequent = do 
-    if MultiSet.null (MultiSet.filter isAct sequent) then do 
-        (sequent, [[sequent]])
+applyPrefixRule :: [(MultiSet LocalType)] -> ([(MultiSet LocalType)],[(MultiSet LocalType)])
+applyPrefixRule (branch:branches) = do 
+    if MultiSet.null (MultiSet.filter isAct branch) then do 
+        ([branch] ++ (fst (applyPrefixRule branches)), [branch] ++ (snd (applyPrefixRule branches)))
     else do 
         -- dualActions is a tuple, (type to be removed , list of choices (dual actions that can be removed))
-        let dualActions = findPrefix sequent (MultiSet.toList sequent)
-        let branches = removeDual (fst dualActions) (snd dualActions) sequent
-        if L.null (snd dualActions) then (sequent, [[sequent]]) else (head branches, [L.tail branches])
-
--- return a tuple, (Modified branches of the current tree, new trees created)
-prefixRuleBranches :: [(MultiSet LocalType)] -> ([(MultiSet LocalType)], [[(MultiSet LocalType)]])
-prefixRuleBranches (branch:branches) = ([fst (applyPrefixRule branch)] ++ fst (prefixRuleBranches branches), (L.tail (snd (applyPrefixRule branch))) ++ (snd (prefixRuleBranches branches)))
-prefixRuleBranches [] = ([],[[]])
+        let dualActions = findPrefix branch (MultiSet.toList branch)
+        let newbranches = removeDual (fst dualActions) (snd dualActions) branch
+        if L.null (snd dualActions) then ([branch] ++ (fst (applyPrefixRule branches)), [branch] ++ (snd (applyPrefixRule branches))) else ([(head newbranches)]++ fst (applyPrefixRule branches), [(head newbranches)] ++ snd (applyPrefixRule branches))
+applyPrefixRule [] = ([],[])
 
 prefixRuleTrees :: [[(MultiSet LocalType)]] -> [[(MultiSet LocalType)]]
 -- check if none or only one prefix was removed 
-prefixRuleTrees (tree:trees) = if [(fst (prefixRuleBranches tree))] == (L.filter notEmpty (snd (prefixRuleBranches tree))) then [(fst (prefixRuleBranches tree))] ++ prefixRuleTrees trees else [(fst (prefixRuleBranches tree))] ++ (snd (prefixRuleBranches tree)) ++ prefixRuleTrees trees
+prefixRuleTrees (tree:trees) = if (fst (applyPrefixRule tree)) == (snd (applyPrefixRule tree)) then [(fst (applyPrefixRule tree))] ++ prefixRuleTrees trees else [(fst (applyPrefixRule tree))] ++ [((snd (applyPrefixRule tree)))] ++ prefixRuleTrees trees
 prefixRuleTrees [] = [[]]
 
 applyPrefixRuleCont :: [[(MultiSet LocalType)]] -> [[(MultiSet LocalType)]] -> [[(MultiSet LocalType)]]

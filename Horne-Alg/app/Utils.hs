@@ -69,10 +69,17 @@ writeToFile file content = do
 ----------------- OTHER UTILS -----------------
 -- check if a branch (sequent contains a PAR type)
 isParSequent :: (MultiSet LocalType) -> Bool
-isParSequent s = if null (MultiSet.filter isPar s) then False else True
+isParSequent s = if MultiSet.null (MultiSet.filter isPar s) then False else True
 -- Verify if the MEET rule shall be applied on a branch (sequent)
 isMeet :: (MultiSet LocalType) -> Bool
 isMeet sequent = if (MultiSet.null (MultiSet.filter isReceiveChoice sequent)) == False then True else False
+-- Remove the prl of a type
+cutPrl :: LocalType -> LocalType
+cutPrl (Act dir s lt) = (Act dir s (cutPrl lt))
+cutPrl (Prl s lt ss) = s
+cutPrl End = (End)
+cutPrl s = s
+
 -- Remove the prefix of a LocalType
 removeDualAct :: LocalType -> LocalType
 removeDualAct (Act dir s lt) = lt
