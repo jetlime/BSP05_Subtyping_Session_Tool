@@ -8,18 +8,11 @@ import Data.MultiSet (MultiSet)
 import qualified Data.MultiSet as MultiSet
 import Data.These
 
--- check if of type choice '+'
-isChoice :: LocalType -> Bool
-isChoice (Choice Send _) = True
-isChoice _ = False
-
-isMeet :: (MultiSet LocalType) -> Bool
-isMeet sequent = if (MultiSet.null (MultiSet.filter isDualChoice sequent)) == False then True else False
-
-isDualChoice :: LocalType -> Bool
-isDualChoice (Choice Receive _) = True
-isDualChoice _ = False
-
+----------------- TYPE CHECKER -----------------
+-- Verify if localtype is of type &{?, ?}
+isReceiveChoice :: LocalType -> Bool
+isReceiveChoice (Choice Receive _) = True
+isReceiveChoice _ = False
 -- check if of type End
 isEnd :: LocalType -> Bool
 isEnd End = True
@@ -29,58 +22,26 @@ isPrl :: LocalType -> Bool
 isPrl (Prl s Bar ss) = True
 isPrl (Act dir s ss) = isPrl ss
 isPrl _ = False
--- check if of type Act
+-- check if of type Act (?x or !x)
 isAct :: LocalType -> Bool
 isAct (Act dir _ lt) = True
 isAct _ = False
-
+-- check if of type Action Sending (!a)
+isActSend :: String -> LocalType -> Bool
+isActSend s (Act Send x _) = if s==x then True else False
+isActSend _ _ = False
+-- check if of type Action Receiving (?a)
+isActReceive :: String -> LocalType -> Bool
+isActReceive s (Act Receive x _) = if s==x then True else False
+isActReceive _ _ = False
+-- check if of type Par (a$b)
 isPar :: LocalType -> Bool
 isPar (Prl s BackAmpersand ss) = True
 isPar (Act dir s ss) = isPar ss
 isPar _ = False
+----------------- TYPE CHECKER -----------------
 
-isParSequent :: (MultiSet LocalType) -> Bool
-isParSequent s = if null (MultiSet.filter isPar s) then False else True
-
-isChoiceReceive :: LocalType -> Bool
-isChoiceReceive (Choice Receive _) = True
-isChoiceReceive _ = False
-
-isActSend :: String -> LocalType -> Bool
-isActSend s (Act Send x _) = if s==x then True else False
-isActSend _ _ = False
-
-isActReceive :: String -> LocalType -> Bool
-isActReceive s (Act Receive x _) = if s==x then True else False
-isActReceive _ _ = False
-
-removeDualAct :: LocalType -> LocalType
-removeDualAct (Act dir s lt) = lt
-removeDualAct lt = lt
-
-writeToFile :: FilePath -> String -> IO()
-writeToFile file content = do 
-    x <- SIO.readFile file
-    writeFile file (content++"\n")
-    appendFile file x
-
-notEmpty :: [(MultiSet LocalType)] -> Bool
-notEmpty [] = False
-notEmpty l = True
-
--- | /O(n)/. Map and separate the 'This' and 'That' or 'These' results 
--- modified function of mapEither to map both cases in case f return These
--- code of mapEither found in source code, 
-mapThese :: (Ord b, Ord c) => (a -> These b c) -> MultiSet a -> (MultiSet b, MultiSet c)
-mapThese f = (\(ls,rs) -> (MultiSet.fromOccurList ls, MultiSet.fromOccurList rs)) . mapThese' . MultiSet.toOccurList
-  where mapThese' [] = ([],[])
-        mapThese' ((x,n):xs) = case f x of
-           This  l -> let (ls,rs) = mapThese' xs in ((l,n):ls, rs)
-           That r -> let (ls,rs) = mapThese' xs in (ls, (r,n):rs)
-           These u i -> let (ls,rs) = mapThese' xs in ((u,n):ls, (i,n):rs)
-
-
------------------PRINTING-----------------
+----------------- PRINTING -----------------
 printResultIO :: LocalType -> LocalType -> Bool -> IO()
 printResultIO subtype supertype True = putStrLn("Subtyping between '" ++ show subtype ++ "' and  '" ++ show supertype ++ "' holds.")
 printResultIO subtype supertype False = putStrLn("Subtyping between " ++ show subtype ++ " and  " ++ show supertype ++ " does not hold.")
@@ -96,4 +57,37 @@ printTrees [] index = ""
 printTree :: [(MultiSet LocalType)] -> Int -> String
 printTree (y:ys) index = if MultiSet.null y then printTree ys index else  " Branch " ++ show(index) ++ ": "++ show (MultiSet.toList y) ++ (printTree ys (index+1))
 printTree [] index = ""
------------------PRINTING-----------------
+
+writeToFile :: FilePath -> String -> IO()
+writeToFile file content = do 
+    x <- SIO.readFile file
+    writeFile file (content++"\n")
+    appendFile file x
+----------------- PRINTING -----------------
+
+----------------- OTHER UTILS -----------------
+-- check if a branch (sequent contains a PAR type)
+isParSequent :: (MultiSet LocalType) -> Bool
+isParSequent s = if null (MultiSet.filter isPar s) then False else True
+-- Verify if the MEET rule shall be applied on a branch (sequent)
+isMeet :: (MultiSet LocalType) -> Bool
+isMeet sequent = if (MultiSet.null (MultiSet.filter isReceiveChoice sequent)) == False then True else False
+-- Remove the prefix of a LocalType
+removeDualAct :: LocalType -> LocalType
+removeDualAct (Act dir s lt) = lt
+removeDualAct lt = lt
+-- Verify if a tree is empty
+notEmpty :: [(MultiSet LocalType)] -> Bool
+notEmpty [] = False
+notEmpty l = True
+-- | /O(n)/. Map and separate the 'This' and 'That' or 'These' results 
+-- modified function of mapEither to map both cases in case f return These
+-- code of mapEither found in source code, 
+mapThese :: (Ord b, Ord c) => (a -> These b c) -> MultiSet a -> (MultiSet b, MultiSet c)
+mapThese f = (\(ls,rs) -> (MultiSet.fromOccurList ls, MultiSet.fromOccurList rs)) . mapThese' . MultiSet.toOccurList
+  where mapThese' [] = ([],[])
+        mapThese' ((x,n):xs) = case f x of
+           This  l -> let (ls,rs) = mapThese' xs in ((l,n):ls, rs)
+           That r -> let (ls,rs) = mapThese' xs in (ls, (r,n):rs)
+           These u i -> let (ls,rs) = mapThese' xs in ((u,n):ls, (i,n):rs)
+----------------- OTHER UTILS -----------------
