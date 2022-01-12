@@ -26,7 +26,7 @@ Source code folders, these folders are all structured the same way. The haskell 
 
 ### Run it 
 
-Execute the python script *SessionSubtypingTool.py*, located in the *Final_SubTyping_Session* folder.
+Execute the python script *SessionSubtypingTool.py*, located in the *Subtyping-Checker-Extension* folder.
 
 ```bash
 python3 SessionSubtypingTool.py
