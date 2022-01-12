@@ -8,6 +8,7 @@ import qualified System.IO.Strict as SIO
 import Data.MultiSet (MultiSet)
 import qualified Data.MultiSet as MultiSet
 import Data.These
+import Data.List as L
 
 ----------------- TYPE CHECKER -----------------
 -- Verify if localtype is of type &{?, ?}
@@ -69,10 +70,17 @@ writeToFile file content = do
 ----------------- OTHER UTILS -----------------
 -- check if a branch (sequent contains a PAR type)
 isParSequent :: (MultiSet LocalType) -> Bool
-isParSequent s = if null (MultiSet.filter isPar s) then False else True
+isParSequent s = if MultiSet.null (MultiSet.filter isPar s) then False else True
 -- Verify if the MEET rule shall be applied on a branch (sequent)
 isMeet :: (MultiSet LocalType) -> Bool
 isMeet sequent = if (MultiSet.null (MultiSet.filter isReceiveChoice sequent)) == False then True else False
+-- Remove the prl of a type
+cutPrl :: LocalType -> LocalType
+cutPrl (Act dir s lt) = (Act dir s (cutPrl lt))
+cutPrl (Prl s lt ss) = s
+cutPrl End = (End)
+cutPrl s = s
+
 -- Remove the prefix of a LocalType
 removeDualAct :: LocalType -> LocalType
 removeDualAct (Act dir s lt) = lt
@@ -91,4 +99,7 @@ mapThese f = (\(ls,rs) -> (MultiSet.fromOccurList ls, MultiSet.fromOccurList rs)
            This  l -> let (ls,rs) = mapThese' xs in ((l,n):ls, rs)
            That r -> let (ls,rs) = mapThese' xs in (ls, (r,n):rs)
            These u i -> let (ls,rs) = mapThese' xs in ((u,n):ls, (i,n):rs)
+getSecond :: [(MultiSet LocalType)] -> [(MultiSet LocalType)]
+getSecond list =  if (L.length list) == 1 then [] else [list !! 1]
+getSecond [] = []
 ----------------- OTHER UTILS -----------------
