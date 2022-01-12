@@ -1,15 +1,15 @@
 # Subtyping Type Session Tool SourceCode & Executable
 
 The technical deliverable is based on the session subtyping tool built by Lorenzo Bacchiani in the python programming language using executable Haskell programs. The tool is publicly available on github, ([repository link](https://github.com/LBacchiani/session-subtyping-tool)).
- His tool allows to apply different subtyping algorithms that will simulate subtyping in order to check subtyping of two session types. We will design and build into this tool a new asynchronous session subtyping algorithm proven by my tutor Ross James Horne. By extending it, the tool will support parallel session types, which act as internal communications.
+ His tool allows to apply different subtyping algorithms that will simulate subtyping in order to check subtyping of two session types. We will design and build into this tool a new asynchronous session subtyping algorithm proven by my tutor Ross James Horne. By extending it, the tool will support parallel session types, which act as internal communications. Part of this readme is taken from the original tool's repository.
 
 ## Download 
 The latest version can be downloaded in the ([releases section](https://github.com/jetlime/Subtyping_Session_Tool_SourceCode/releases)) of this repository. Once downloaded you can follow the **Run the Sodtware** section if you have a windows machine. Otherwise, you can compile the suited executables by following the **Source Code Usage** section.
 
 ## Folders
-All exectuables and source code needed for the entire software,
+Description of every folder in this repository,
 
-* *Final_SubTyping_Session_Tool*: Source code & Executable files needed to run the software all combined.
+* *Subtyping-Checker-Extension*: Complete extended version of the Subtyping Checker Tool.
   
 Source code folders, these folders are all structured the same way. The haskell source code is in the folder, *app*. The dependencies needed to compile the source code are located in *package.yaml*, under the *dependencies* section.
 
@@ -26,15 +26,16 @@ Source code folders, these folders are all structured the same way. The haskell 
 
 ### Run it 
 
-You simply need to execute the python script *SessionSubtypingTool.py*, located in the *Final_SubTyping_Session* folder.
+Execute the python script *SessionSubtypingTool.py*, located in the *Final_SubTyping_Session* folder.
 
 ```bash
 python3 SessionSubtypingTool.py
 ```
+The Graphical User Interface will open up.
 
 ## Source Code Usage
 
-This tutorial will make you understand how to use the parallel subtyping checker algorithm developed by Ross James Horne. The source code is present in the Horne-Alg folder in this repository.
+In this section, it is specified out to compile the source code, in case you need to recompile it or use any other OS then Windows.
 
 ### Requirements
 
@@ -43,19 +44,18 @@ This tutorial will make you understand how to use the parallel subtyping checker
 
 
 ### Compiling Haskell source codes:
-Tutorial for *stack* compiler,
 
-* Choose a one of the three source code folders
-* Open a terminal, in the folder \<Folder Name>, e.g *Horne-Alg*
-* run the following command, *stack build*
-* The generated executable file is located in "Horne-Alg\.stack-work\dist\274b403a\build\Horne-Alg-exe\Horne-Alg-exe.exe"
-
-The executable can then be added to the extended program of Lorenzo Bacchiani (1.) or executed on the command line (2.).
-
-1. * Move the generated executable file inside Final_SubTyping_Session\parallel-subtyping\ \<your OS>, name the file *Checker.exe * instead of *Main.exe*
-   * Run the Application: python Final_SubTyping_Session\SessionSubtypingTool.py
-2. Here, we assume that you have a terminal open and that you are in *Horne-Alg* folder.
-To execute the file with the proper command, stack exec Horne-Alg-exe tmp/sub.txt tmp/sup.txt Horne
-   * parameter1: path of the subtype stored in a .txt file
-   * parameter2: path of the supertype stored in a .txt file
-   * parameter3: execution flag determining the algortihm mode, with "Horne", the supertype is dualised at the beginning, with "OtherWay" the subtype is dualized at the beginning.
+* In the *Subtyping-Checker-Extension* folder, 
+* For each each folder in the folder *session-type-utilities*,
+  * Open a terminal in the given folder
+  * Compile the source code of the folder with any Haskell Compiler, the main files to be executed are, 
+    * Main.hs for the Parser
+    * Checker.hs for the Algortihms
+    * Viewer.hs for the Viewer
+  * Move the generated .exe file in the correct folder:
+      * Move asynchronous subtyping algorithm executable to asynchronous-subtyping/your OS
+      * Mov fair asynchronous subtyping algorithm executable to fair-asynchronous-subtyping/your OS
+      * Move synchronous subtyping algorithm executable to sync_subtyping/your OS
+      * Move parallel subtyping algorithm executable to parallel-subtyping/your OS
+      * Move type viewer executable to viewer/your OS
+      * Move type parser executable to parser/your OS
