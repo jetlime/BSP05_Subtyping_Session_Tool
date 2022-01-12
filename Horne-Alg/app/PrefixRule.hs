@@ -37,7 +37,11 @@ applyPrefixRule (branch:branches) = do
         -- dualActions is a tuple, (type to be removed , list of choices (dual actions that can be removed))
         let dualActions = findPrefix branch (MultiSet.toList branch)
         let newbranches = removeDual (fst dualActions) (snd dualActions) branch
-        if L.null (snd dualActions) then ([branch] ++ (fst (applyPrefixRule branches)), [branch] ++ (snd (applyPrefixRule branches))) else ([(head newbranches)]++ fst (applyPrefixRule branches), [(head newbranches)] ++ snd (applyPrefixRule branches))
+        if (L.length (snd dualActions) == 0) then ([branch] ++ (fst (applyPrefixRule branches)), [branch] ++ (snd (applyPrefixRule branches))) else
+            if (L.length (snd dualActions) == 1) then 
+                ([(head newbranches)]++ fst (applyPrefixRule branches), snd (applyPrefixRule branches))
+            else                 
+                ([(head newbranches)]++ fst (applyPrefixRule branches), getSecond (newbranches) ++ snd (applyPrefixRule branches))
 applyPrefixRule [] = ([],[])
 
 prefixRuleTrees :: [[(MultiSet LocalType)]] -> [[(MultiSet LocalType)]]

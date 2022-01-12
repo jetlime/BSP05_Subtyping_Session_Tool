@@ -8,6 +8,7 @@ import qualified System.IO.Strict as SIO
 import Data.MultiSet (MultiSet)
 import qualified Data.MultiSet as MultiSet
 import Data.These
+import Data.List as L
 
 ----------------- TYPE CHECKER -----------------
 -- Verify if localtype is of type &{?, ?}
@@ -98,4 +99,7 @@ mapThese f = (\(ls,rs) -> (MultiSet.fromOccurList ls, MultiSet.fromOccurList rs)
            This  l -> let (ls,rs) = mapThese' xs in ((l,n):ls, rs)
            That r -> let (ls,rs) = mapThese' xs in (ls, (r,n):rs)
            These u i -> let (ls,rs) = mapThese' xs in ((u,n):ls, (i,n):rs)
+getSecond :: [(MultiSet LocalType)] -> [(MultiSet LocalType)]
+getSecond list =  if (L.length list) == 1 then [] else [list !! 1]
+getSecond [] = []
 ----------------- OTHER UTILS -----------------

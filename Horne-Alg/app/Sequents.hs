@@ -131,9 +131,6 @@ algorithmRun subtype supertype sequent = do
         let result = printResult subtype supertype algresult
         writeToFile file ("Final Result: " ++ result)
         printResultIO subtype supertype algresult   
-        -- DEBUG 
-        let test = applyParRule [[MultiSet.fromList [subtype, getDual supertype]]]
-        putStrLn (printTrees test 1)
         
 getDual :: LocalType -> LocalType
 getDual (Act Send s lt) = (Act Receive s (getDual lt))
