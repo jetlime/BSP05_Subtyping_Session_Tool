@@ -23,6 +23,6 @@ meetRule (branch:branches) = do
     else ([branch] ++ (fst (meetRule branches)),[branch] ++ (snd (meetRule branches)))
 meetRule [] = ([],[])
 
-applyMeetRule ::  [[(MultiSet LocalType)]] -> [[(MultiSet LocalType)]]
-applyMeetRule (tree:trees) = if (fst (meetRule tree) == snd (meetRule tree)) then [fst(meetRule tree)] ++ applyMeetRule trees else [fst(meetRule tree)] ++ [snd (meetRule tree)] ++ applyMeetRule trees
-applyMeetRule [] = []
+applyMeetRule ::  [[(MultiSet LocalType)]] -> ([[(MultiSet LocalType)]], String)
+applyMeetRule (tree:trees) = if (fst (meetRule tree) == snd (meetRule tree)) then ([fst(meetRule tree)] ++ (fst (applyMeetRule trees)), "MEET RULE") else ([fst(meetRule tree)] ++ [snd (meetRule tree)] ++ (fst (applyMeetRule trees)), "MEET RULE")
+applyMeetRule [] = ([], "")

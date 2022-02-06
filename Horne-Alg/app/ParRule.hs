@@ -9,10 +9,13 @@ import Data.These
 
 
 -- Apply Par rule on every tree
-applyParRule :: [[(MultiSet LocalType)]] -> [[(MultiSet LocalType)]]
-applyParRule (tree:trees) = if (fst (parRule tree) == snd(parRule tree)) then [fst(parRule tree)] ++ applyParRule trees else [fst(parRule tree)] ++ [snd (parRule tree)] ++ applyParRule trees
-applyParRule [] = []
-
+applyParRule :: [[(MultiSet LocalType)]] -> ([[(MultiSet LocalType)]], String)
+applyParRule (tree:trees) = let 
+    firstTree = fst (parRule tree)
+    secondTree = snd(parRule tree)
+    in                  
+        if (firstTree == secondTree) then (([firstTree] ++ (fst (applyParRule trees))),"PAR rule") else (([firstTree] ++ [secondTree] ++ (fst (applyParRule trees))),"PAR rule")
+applyParRule [] = ([], "")
 -- Apply Par rule on every branch
 parRule :: [(MultiSet LocalType)] -> ([(MultiSet LocalType)],[(MultiSet LocalType)])
 parRule (branch:branches) = do  

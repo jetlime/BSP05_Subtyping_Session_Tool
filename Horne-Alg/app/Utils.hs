@@ -65,6 +65,13 @@ writeToFile file content = do
     x <- SIO.readFile file
     writeFile file (content++"\n")
     appendFile file x
+
+printProof :: [([[(MultiSet LocalType)]], String)] -> String
+printProof (x:xs) = printRule x ++ "\n" ++ printProof xs
+printProof [] = ""
+
+printRule :: ([[(MultiSet LocalType)]], String) -> String
+printRule (trees, rule) = rule ++ ": " ++ (printTrees trees 1)
 ----------------- PRINTING -----------------
 
 ----------------- OTHER UTILS -----------------

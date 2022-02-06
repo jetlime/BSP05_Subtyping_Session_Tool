@@ -49,8 +49,8 @@ prefixRuleTrees :: [[(MultiSet LocalType)]] -> [[(MultiSet LocalType)]]
 prefixRuleTrees (tree:trees) = if (fst (applyPrefixRule tree)) == (snd (applyPrefixRule tree)) then [(fst (applyPrefixRule tree))] ++ prefixRuleTrees trees else [(fst (applyPrefixRule tree))] ++ [((snd (applyPrefixRule tree)))] ++ prefixRuleTrees trees
 prefixRuleTrees [] = [[]]
 
-applyPrefixRuleCont :: [[(MultiSet LocalType)]] -> [[(MultiSet LocalType)]] -> [[(MultiSet LocalType)]]
-applyPrefixRuleCont (tree:trees) everything = if helper tree then applyPrefixRuleCont (prefixRuleTrees everything) (prefixRuleTrees everything) else applyPrefixRuleCont trees everything
+applyPrefixRuleCont :: [[(MultiSet LocalType)]] -> [[(MultiSet LocalType)]] -> ([[(MultiSet LocalType)]], String)
+applyPrefixRuleCont (tree:trees) everything = if helper tree then (fst (applyPrefixRuleCont (prefixRuleTrees everything) (prefixRuleTrees everything)), "PREFIX RULE:") else (fst (applyPrefixRuleCont trees everything), "PREFIX RULE")
     where helper (branch:branches) = if (L.null (snd (findPrefix branch (MultiSet.toList branch)))) then helper branches else True
           helper [] = False
-applyPrefixRuleCont [] everything = everything
+applyPrefixRuleCont [] everything = (everything, "")
